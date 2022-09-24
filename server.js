@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
 //  Import routes
 const authRouter = require('./routes/auth');
 const userRouter = require('./routes/user');
+const categoryRouter = require('./routes/category');
 
 const app = express();
 
@@ -33,6 +34,7 @@ if (process.env.NODE_ENV === 'development') {
 // Routes middleware
 app.use('/api', authRouter);
 app.use('/api', userRouter);
+app.use('/api', categoryRouter);
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

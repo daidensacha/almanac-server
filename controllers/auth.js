@@ -56,7 +56,7 @@ const signup = (req, res) => {
                 <h1>Please use the following link to activate your account</h1>
                 <p>Hi ${firstname},</p>
                 <p>The following activation link is valid for 10 minutes. If your unable to complete the activation in this timeframe, you will need to start the registration process again.</p>
-                <p>${process.env.CLIENT_URL}/auth/activate/${token}</p>
+                <p>${process.env.CLIENT_URL}/activate-account/${token}</p>
                 <p>Best regards,</p>
                 <p>Garden Almanac Team</p>
                 <hr />
@@ -135,6 +135,7 @@ const signin = (req, res) => {
       lastname,
       email,
       role,
+      show_location,
       latitude,
       longitude,
       koppen_geiger_zone,
@@ -148,6 +149,7 @@ const signin = (req, res) => {
         lastname,
         email,
         role,
+        show_location,
         latitude,
         longitude,
         koppen_geiger_zone,
@@ -157,12 +159,36 @@ const signin = (req, res) => {
   });
 };
 
+// Require signin middleware
+const requireSignin = expressJwt({
+  secret: process.env.JWT_SECRET, // returns req.auth._id
+  algorithms: ['HS256']
+});
+
+// Admin middleware to check if user is admin // TODO: add admin role
+const adminMiddleware = (req, res, next) => {
+  User.findById({ _id: req.auth._id }).exec((err, user) => {
+    if (err || !user) {
+      return res.status(400).json({
+        error: 'User not found',
+      });
+    }
+    if (user.role !== 'admin') {
+      return res.status(400).json({
+        error: 'Admin resource. Access denied.',
+      });
+    }
+    req.profile = user;
+    next();
+  });
+};
+
 module.exports = {
   signup,
   accountActivation,
   signin,
-  // requireSignin,
-  // adminMiddleware,
+  requireSignin,
+  adminMiddleware,
   // forgotPassword,
   // resetPassword,
   // googleLogin,

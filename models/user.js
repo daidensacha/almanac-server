@@ -22,6 +22,10 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
     },
+    show_location: {
+      type: Boolean,
+      default: false,
+    },
     latitude: {
       type: Number,
       trim: true,
