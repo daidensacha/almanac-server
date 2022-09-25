@@ -6,28 +6,35 @@ const checkSignin = (req, res, next) => {
     return next();
   }
   return res.redirect('/signin');
-}
+};
 
-// const requireSignin = expressJwt({
-//   secret: process.env.JWT_SECRET, // returns req.auth._id
-//   algorithms: ['HS256'],
-// })
-
-const uniqueCategoryAndUser = (req, res, next) => {
-  const { category, user } = req.body;
-  console.log('user', req.user);
-  Category.findOne({ category}).exec((err, category) => {
-    if (category && category.created_by === user._id) {
-      return res.status(400).json({
-        error: 'Category already exist, oops!',
-      });
-    }
+// Middleware to check if Category exists for user before creating/ updating
+const checkCategoryExists = async (req, res, next) => {
+  const { category, description, created_by } = req.body;
+  const findOne = await Category.findOne({
+    category: category,
+    created_by: req.auth._id,
+  }).populate([
+    {
+      path: 'created_by',
+      select: 'firstname lastname createdAt', // only return the Persons name
+    },
+  ]);
+  // console.log('Middleware findOne', findOne);
+  if (findOne) {
+    return res.status(400).json({
+      error: 'Category already exist, oops!',
+      category: findOne.category,
+      description: findOne.description,
+      created_by: `${findOne.created_by.firstname} ${findOne.created_by.lastname}`,
+      created_at: findOne.created_by.createdAt.toDateString(),
+    });
+  } else {
     next();
-  });
-}
+  }
+};
 
 module.exports = {
   checkSignin,
-  uniqueCategoryAndUser,
+  checkCategoryExists,
 };
-
