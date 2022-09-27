@@ -10,7 +10,7 @@ const Schema = mongoose.Schema;
 
 const eventSchema = new Schema(
   {
-    name: {
+    event_name: {
       type: String,
       trim: true,
       required: true,
@@ -22,18 +22,6 @@ const eventSchema = new Schema(
       required: true,
       max: 120,
     },
-    location: {
-      type: String,
-      trim: true,
-      required: true,
-      max: 120,
-    },
-    repeats: {
-      type: String,
-      trim: true,
-      required: false,
-      max: 20,
-    },
     occurs_at: {
       type: Date,
       trim: true,
@@ -42,8 +30,19 @@ const eventSchema = new Schema(
     month: {
       type: String,
       trim: true,
+      required: true,
+      max: 120,
+    },
+    repeats_inc: {
+      type: Number,
+      trim: true,
       required: false,
-      // default: occursAtToMonth(),
+      max: 20,
+    },
+    repeats_time: {
+      type: String,
+      trim: true,
+      required: false,
     },
     notes: {
       type: String,

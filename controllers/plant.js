@@ -15,7 +15,7 @@ const create_plant = async (req, res, next) => {
     depth,
     notes,
   } = req.body;
-  console.log('req.auth._id', req.auth._id);
+  // console.log('req.auth._id', req.auth._id);
   if (!common_name) {
     return res.status(400).send('Please enter a common name');
   }
@@ -49,10 +49,11 @@ const create_plant = async (req, res, next) => {
     }
     next(error);
   }
+  next();
 };
 
 const get_all_plants = async (req, res, next) => {
-  console.log('req.auth._id', req.auth._id);
+  // console.log('req.auth._id', req.auth._id);
   try {
     // Only get plants created by the logged in user
     const allPlants = await Plant.find({ created_by: req.auth._id }).populate([
@@ -61,7 +62,7 @@ const get_all_plants = async (req, res, next) => {
         select: 'firstname lastname', // only return the Persons name
       },
     ]);
-    res.status(200).send(allPlants);
+    res.status(200).json({allPlants});
   } catch (error) {
     console.log(error);
     if (!allPlants) {
@@ -76,10 +77,11 @@ const get_all_plants = async (req, res, next) => {
     }
     next(error);
   }
+  next();
 };
 
 const get_plant_id = async (req, res, next) => {
-  console.log('req.auth._id', req.auth._id);
+  // console.log('req.auth._id', req.auth._id);
   const { id } = req.params;
   try {
     const plant = await Plant.findById(id).populate([
@@ -161,14 +163,15 @@ const update_plant_id = async (req, res, next) => {
     }
     next(error);
   }
-}
-
+  next();
+};
 
 const delete_plant_id = async (req, res, next) => {
   const { id } = req.params;
   if (!id) {
     return res.status(400).json({
-      error: 'No ID provided'});
+      error: 'No ID provided',
+    });
   }
   try {
     const plant = await Plant.findById(id);

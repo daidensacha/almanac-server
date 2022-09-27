@@ -1,9 +1,10 @@
+const mongoose = require('mongoose');
 const { expressjwt: expressJwt } = require('express-jwt');
 const Category = require('../models/category');
 
 const create_category = async (req, res, next) => {
-  const { category, description} = req.body;
-  console.log('req.auth._id', req.auth._id);
+  const { category, description } = req.body;
+  // console.log('req.auth._id', req.auth._id);
   if (!category) {
     return res.status(400).send('No category provided');
   }
@@ -13,7 +14,7 @@ const create_category = async (req, res, next) => {
       description,
       created_by: req.auth._id,
     });
-    res.status(201).send(newCategory);
+    res.status(201).json({newCategory});
   } catch (error) {
     console.log(error);
     if (error.code === 11000) {
@@ -28,17 +29,20 @@ const create_category = async (req, res, next) => {
     }
     next(error);
   }
+  next();
 };
 
 const get_all_categories = async (req, res, next) => {
   try {
-    const allCategories = await Category.find({created_by: req.auth._id}).populate([
+    const allCategories = await Category.find({
+      created_by: req.auth._id,
+    }).populate([
       {
         path: 'created_by',
         select: 'firstname lastname', // only return the Persons name
       },
     ]);
-    res.status(200).send(allCategories);
+    res.status(200).json({allCategories});
   } catch (error) {
     console.log(error);
     if (!allCategories) {
@@ -70,11 +74,11 @@ const get_category_id = async (req, res, next) => {
     ]);
     if (category.created_by._id != req.auth._id) {
       return res.status(401).json({
-        error: 'Unauthorized: You can only view categories you created'
+        error: 'Unauthorized: You can only view categories you created',
       });
     }
 
-    res.status(200).send(category);
+    res.status(200).json({category});
   } catch (error) {
     console.log(error);
     if (error.name === 'CastError') {
@@ -82,66 +86,18 @@ const get_category_id = async (req, res, next) => {
         error: 'Invalid ID',
       });
     }
-    if (!category) {
-      return res.status(404).json({
-        error: 'Category not found',
-      });
-    }
+    // if (!category) {
+    //   return res.status(404).json({
+    //     error: 'Category not found',
+    //   });
+    // }
     next(error);
   }
   next();
 };
 
-// const update_category_id = async (req, res, next) => {
-//   const { id } = req.params;
-//   console.log(id)
-//   const { category, description } = req.body;
-//   if (!id) {
-//     return res.status(400).json({
-//       error: 'No ID provided',
-//     });
-//   }
-//   try {
-//     const updatedCategory = await Category.findByIdAndUpdate(
-//       id,
-//       {
-//         category,
-//         description,
-//         updatedAt: Date.now(),
-//       },
-//       { new: true },
-//     );
-//     if (updatedCategory.created_by != req.auth._id) {
-//       return res.status(401).json({
-//         error: 'Unauthorized: You can only update categories you created'
-//       });
-//     }
-//     res.status(200).send(updatedCategory);
-//   } catch (error) {
-//     console.log(error);
-//     if (error.name === 'CastError') {
-//       return res.status(400).json({
-//         error: 'Invalid ID',
-//       });
-//     }
-//     if (!updatedCategory) {
-//       return res.status(404).json({
-//         error: 'Category not found',
-//       });
-//     }
-//     if (error.name === 'ValidationError') {
-//       return res.status(400).json({
-//         error: error.message,
-//       });
-//     }
-//     next(error);
-//   }
-//   next();
-// };
-
 const update_category_id = async (req, res, next) => {
   const { id } = req.params;
-  console.log(id)
   const { category, description } = req.body;
   if (!id) {
     return res.status(400).json({
@@ -153,14 +109,14 @@ const update_category_id = async (req, res, next) => {
     const updateCategory = await Category.findById(id);
     if (updateCategory.created_by != req.auth._id) {
       return res.status(401).json({
-        error: 'Unauthorized: You can only update categories you created'
+        error: 'Unauthorized: You can only update categories you created',
       });
     }
     updateCategory.category = category;
     updateCategory.description = description;
-    updateCategory.updatedAt = Date.now();
+    updateCategory.updated_at = Date.now();
     await updateCategory.save();
-    res.status(200).send(updateCategory);
+    res.status(200).json({updateCategory});
   } catch (error) {
     console.log(error);
     if (error.name === 'CastError') {
@@ -194,10 +150,11 @@ const delete_category_id = async (req, res, next) => {
     const deleteCategory = await Category.findById(id);
     if (deleteCategory.created_by != req.auth._id) {
       return res.status(401).json({
-        error: 'Unauthorized: You can only delete categories you created'
+        error: 'Unauthorized: You can only delete categories you created',
       });
     }
-    res.status(200).send(deleteCategory);
+    await deleteCategory.remove();
+    res.status(200).json({deleteCategory});
   } catch (error) {
     console.log(error);
     if (error.name === 'CastError') {

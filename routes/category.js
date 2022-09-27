@@ -21,8 +21,8 @@ const { categoryCreateValidator } = require('../validators/category');
 router.post('/category/create',requireSignin, checkCategoryExists, create_category);
 router.get('/categories', requireSignin, get_all_categories);
 router.get('/category/:id', requireSignin, get_category_id);
-router.put('/category/:id', requireSignin, update_category_id);
-router.delete('/category/:id', requireSignin, delete_category_id);
+router.put('/category/edit/:id', requireSignin, update_category_id);
+router.delete('/category/delete/:id', requireSignin, delete_category_id);
 
 
 

@@ -2,18 +2,19 @@ const Event = require('../models/event');
 
 const create_event = async (req, res, next) => {
   const {
-    name,
-    occurs_at,
-    location,
+    event_name,
     description,
-    repeats,
+    occurs_at,
+    month,
+    repeats_inc,
+    repeats_time,
     notes,
     category, // category_id selected from dropdown
     plant, // plant_id selected from dropdown
   } = req.body;
-  console.log('req.auth._id', req.auth._id);
+  // console.log('req.auth._id', req.auth._id);
   // check for required fields
-  if (!name || !occurs_at || !location || !description) {
+  if (!event_name || !occurs_at || !month || !description) {
     return res.status(400).json({
       error: 'Please enter required fields'});
   }
@@ -26,12 +27,12 @@ const create_event = async (req, res, next) => {
   // const month = occurs_at;
   try {
     const newEvent = await Event.create({
-      name,
+      event_name,
       occurs_at,
-      location,
       description,
-      repeats,
-      month: occurs_at, // how to add month name to the event?
+      repeats_inc,
+      repeats_time,
+      month,
       notes,
       category,
       plant,
@@ -45,13 +46,14 @@ const create_event = async (req, res, next) => {
         error: 'Event already exists',
       });
     }
-    if (error.name === 'ValidationError') {
+    if (error.event_name === 'ValidationError') {
       return res.status(400).json({
         error: error.message,
       });
     }
     next(error);
   }
+  next();
 };
 
 const get_all_events = async (req, res, next) => {
@@ -68,7 +70,7 @@ const get_all_events = async (req, res, next) => {
       {
         path: 'plant', // reference to the Plant model
         model: 'Plant', // return the model fields
-        select: '-createdAt -updatedAt -__v', // exclude these fields
+        select: '-created_at -created_at -__v', // exclude these fields
       },
     ]);
     res.status(200).send(allEvents);
@@ -79,7 +81,7 @@ const get_all_events = async (req, res, next) => {
         error: 'No events found',
       });
     }
-    if (error.name === 'ValidationError') {
+    if (error.event_name === 'ValidationError') {
       return res.status(400).json({
         error: error.message,
       });
@@ -91,6 +93,7 @@ const get_all_events = async (req, res, next) => {
 
 const get_event_id = async (req, res, next) => {
   const { id } = req.params;
+  console.log(id)
   if (!id) {
     return res.status(400).json({
       error: 'No event id provided',
@@ -109,7 +112,7 @@ const get_event_id = async (req, res, next) => {
       {
         path: 'plant', // reference to the Plant model
         model: 'Plant', // return the model fields
-        select: '-createdAt -updatedAt -__v', // exclude these fields
+        select: '-created_at -created_at -__v', // exclude these fields
       },
     ]);
     if (event.created_by._id != req.auth._id) {
@@ -117,7 +120,7 @@ const get_event_id = async (req, res, next) => {
         error: 'Unauthorized: You are not authorized to view this event',
       });
     }
-    res.status(200).send(event);
+    res.status(200).json({event});
   } catch (error) {
     console.log(error);
     if (!event) {
@@ -125,7 +128,7 @@ const get_event_id = async (req, res, next) => {
         error: 'No event found',
       });
     }
-    if (error.name === 'ValidationError') {
+    if (error.event_name === 'ValidationError') {
       return res.status(400).json({
         error: error.message,
       });
@@ -138,11 +141,12 @@ const get_event_id = async (req, res, next) => {
 const update_event_id = async (req, res, next) => {
   const { id } = req.params;
   const {
-    name,
-    occurs_at,
-    location,
+    event_name,
     description,
-    repeats,
+    occurs_at,
+    month,
+    repeats_inc,
+    repeats_time,
     notes,
     category, // category_id selected from dropdown
     plant, // plant_id selected from dropdown
@@ -159,11 +163,12 @@ const update_event_id = async (req, res, next) => {
         error: 'Unauthorized: You are not authorized to update this event',
       });
     }
-    updatedEvent.name = name;
-    updatedEvent.occurs_at = occurs_at;
-    updatedEvent.location = location;
+    updatedEvent.event_name = event_name;
     updatedEvent.description = description;
-    updatedEvent.repeats = repeats;
+    updatedEvent.occurs_at = occurs_at;
+    updatedEvent.month = month;
+    updatedEvent.repeats_inc = repeats_inc;
+    updatedEvent.repeats_time = repeats_time;
     updatedEvent.notes = notes;
     updatedEvent.category = category;
     updatedEvent.plant = plant;
@@ -184,6 +189,7 @@ const update_event_id = async (req, res, next) => {
     }
     next(error);
   }
+  next();
 };
 
 const delete_event_id = async (req, res, next) => {
@@ -210,14 +216,14 @@ const delete_event_id = async (req, res, next) => {
         error: 'No event found',
       });
     }
-    if (error.name === 'ValidationError') {
+    if (error.event_name === 'ValidationError') {
       return res.status(400).json({
         error: error.message,
       });
     }
     next(error);
   }
-
+  next();
 };
 
 module.exports = {
