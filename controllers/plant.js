@@ -55,8 +55,8 @@ const create_plant = async (req, res, next) => {
 const get_all_plants = async (req, res, next) => {
   // console.log('req.auth._id', req.auth._id);
   try {
-    // Only get plants created by the logged in user
-    const allPlants = await Plant.find({ created_by: req.auth._id }).populate([
+    // Only get plants created by the logged in user, & those that are not archived
+    const allPlants = await Plant.find({$and:[{ created_by: req.auth._id },{archived:{$eq:false}}]}).populate([
       {
         path: 'created_by',
         select: 'firstname lastname', // only return the Persons name
@@ -128,30 +128,64 @@ const update_plant_id = async (req, res, next) => {
     depth,
     notes,
   } = req.body;
+  console.log('reqBody', req.body);
   try {
-    const plant = await Plant.findById(id);
-    if (plant.created_by != req.auth._id) {
+    const updatedPlant = await Plant.findById(id);
+    if (updatedPlant.created_by != req.auth._id) {
       return res.status(401).json({
         error: 'Unauthorized: You can only update plants you created',
       });
     }
-    plant.common_name = common_name;
-    plant.botanical_name = botanical_name;
-    plant.sow_at = sow_at;
-    plant.plant_at = plant_at;
-    plant.harvest_at = harvest_at;
-    plant.harvest_to = harvest_to;
-    plant.fertilise = fertilise;
-    plant.fertiliser_type = fertiliser_type;
-    plant.spacing = spacing;
-    plant.depth = depth;
-    plant.notes = notes;
-    plant.updated_at = Date.now();
-    await plant.save();
-    res.status(200).send(plant);
+    updatedPlant.common_name = common_name;
+    updatedPlant.botanical_name = botanical_name;
+    updatedPlant.sow_at = sow_at;
+    updatedPlant.plant_at = plant_at;
+    updatedPlant.harvest_at = harvest_at;
+    updatedPlant.harvest_to = harvest_to;
+    updatedPlant.fertilise = fertilise;
+    updatedPlant.fertiliser_type = fertiliser_type;
+    updatedPlant.spacing = spacing;
+    updatedPlant.depth = depth;
+    updatedPlant.notes = notes;
+    updatedPlant.updated_at = Date.now();
+    await updatedPlant.save();
+    res.status(200).json({updatedPlant});
   } catch (error) {
     console.log(error);
-    if (!plant) {
+    if (!updatedPlant) {
+      return res.status(404).json({
+        error: 'Plant not found',
+      });
+    }
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        error: error.message,
+      });
+    }
+    next(error);
+  }
+  next();
+};
+
+const archive_plant_id_ = async (req, res, next) => {
+  const { id } = req.params;
+  const { archived } = req.body;
+  console.log('archived', archived);
+  console.log('id', id);
+  try {
+    const archivedPlant = await Plant.findById(id);
+    if (archivedPlant.created_by != req.auth._id) {
+      return res.status(401).json({
+        error: 'Unauthorized: You can only remove plants you created',
+      });
+    }
+    archivedPlant.archived = archived;
+    archivedPlant.updated_at = Date.now();
+    await archivedPlant.save();
+    res.status(200).json({archivedPlant});
+  } catch (error) {
+    console.log(error);
+    if (!archivedPlant) {
       return res.status(404).json({
         error: 'Plant not found',
       });
@@ -181,7 +215,7 @@ const delete_plant_id = async (req, res, next) => {
       });
     }
     await plant.remove();
-    res.status(200).send(plant);
+    res.status(200).json({plant});
   } catch (error) {
     console.log(error);
     if (!plant) {
@@ -204,5 +238,6 @@ module.exports = {
   get_all_plants,
   get_plant_id,
   update_plant_id,
+  archive_plant_id_,
   delete_plant_id,
 };

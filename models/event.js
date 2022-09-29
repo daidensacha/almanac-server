@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-// function occursAtToMonth() {
-//   const month = new Date()
-//     .toLocaleString('en-us', { month: 'long' })
+// function occursAtTooccurs_to() {
+//   const occurs_to = new Date()
+//     .toLocaleString('en-us', { occurs_to: 'long' })
 //     .toLowerCase();
-//   return month;
+//   return occurs_to;
 // }
 
 const eventSchema = new Schema(
@@ -19,7 +19,7 @@ const eventSchema = new Schema(
     description: {
       type: String,
       trim: true,
-      required: true,
+      required: false,
       max: 120,
     },
     occurs_at: {
@@ -27,19 +27,18 @@ const eventSchema = new Schema(
       trim: true,
       required: true,
     },
-    month: {
-      type: String,
+    occurs_to: {
+      type: Date,
       trim: true,
-      required: true,
-      max: 120,
+      required: false,
     },
-    repeats_inc: {
+    repeat_frequency: {
       type: Number,
       trim: true,
       required: false,
-      max: 20,
+      max: 26,
     },
-    repeats_time: {
+    repeat_cycle: {
       type: String,
       trim: true,
       required: false,
@@ -48,7 +47,13 @@ const eventSchema = new Schema(
       type: String,
       trim: true,
       required: false,
-      max: 120,
+      max: 240,
+    },
+    archived: {
+      type: Boolean,
+      default: false,
+      trim: true,
+      required: false,
     },
     created_by: {
       type: Schema.ObjectId,

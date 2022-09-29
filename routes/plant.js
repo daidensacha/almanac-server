@@ -8,6 +8,7 @@ const {
   get_all_plants,
   get_plant_id,
   update_plant_id,
+  archive_plant_id_,
   delete_plant_id,
 } = require('../controllers/plant');
 
@@ -19,7 +20,8 @@ const { runValidation } = require('../validators');
 router.post('/plant/create',requireSignin, create_plant);
 router.get('/plants', requireSignin, get_all_plants);
 router.get('/plant/:id', requireSignin, get_plant_id);
-router.put('/plant/:id', requireSignin,   update_plant_id,);
-router.delete('/plant/:id', requireSignin, delete_plant_id);
+router.put('/plant/update/:id', requireSignin,   update_plant_id,);
+router.patch('/plant/archive/:id', requireSignin, archive_plant_id_);
+router.delete('/plant/delete/:id', requireSignin, delete_plant_id);
 
 module.exports = router;

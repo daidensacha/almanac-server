@@ -13,7 +13,13 @@ const categorySchema = new Schema(
       type: String,
       trim: true,
       required: false,
-      max: 120,
+      max: 240,
+    },
+    archived: {
+      type: Boolean,
+      default: false,
+      trim: true,
+      required: false,
     },
     created_by: {
       type: Schema.ObjectId,

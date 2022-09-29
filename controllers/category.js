@@ -4,7 +4,7 @@ const Category = require('../models/category');
 
 const create_category = async (req, res, next) => {
   const { category, description } = req.body;
-  // console.log('req.auth._id', req.auth._id);
+  console.log('req.auth._id', req.auth._id);
   if (!category) {
     return res.status(400).send('No category provided');
   }
@@ -35,7 +35,7 @@ const create_category = async (req, res, next) => {
 const get_all_categories = async (req, res, next) => {
   try {
     const allCategories = await Category.find({
-      created_by: req.auth._id,
+      $and:[{ created_by: req.auth._id },{archived:{$eq:false}}]
     }).populate([
       {
         path: 'created_by',
@@ -139,6 +139,48 @@ const update_category_id = async (req, res, next) => {
   next();
 };
 
+const archive_category_id = async (req, res, next) => {
+  const { id } = req.params;
+  const { archived } = req.body;
+  if (!id) {
+    return res.status(400).json({
+      error: 'No ID provided',
+    });
+  }
+  try {
+    // use findById so I can add validation for the category owner
+    const archiveCategory = await Category.findById(id);
+    if (archiveCategory.created_by != req.auth._id) {
+      return res.status(401).json({
+        error: 'Unauthorized: You can only archive categories you created',
+      });
+    }
+    archiveCategory.archived = archived;
+    archiveCategory.updated_at = Date.now();
+    await archiveCategory.save();
+    res.status(200).json({archiveCategory});
+  } catch (error) {
+    console.log(error);
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        error: 'Invalid ID',
+      });
+    }
+    if (!archiveCategory) {
+      return res.status(404).json({
+        error: 'Category not found',
+      });
+    }
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        error: error.message,
+      });
+    }
+    next(error);
+  }
+  next();
+};
+
 const delete_category_id = async (req, res, next) => {
   const { id } = req.params;
   if (!id) {
@@ -182,5 +224,6 @@ module.exports = {
   get_all_categories,
   get_category_id,
   update_category_id,
+  archive_category_id,
   delete_category_id,
 };
