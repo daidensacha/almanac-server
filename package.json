@@ -2,10 +2,12 @@
   "name": "almanac-server",
   "version": "1.0.0",
   "description": "",
+  "private": true,
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "watch": "nodemon ./server.js",
+    "start": "node ./bin/www",
+    "watch": "nodemon ./www",
     "devps": "set DEBUG=express-session-authentication:* & npm run watch",
     "devmac": "DEBUG=express-session-authentication:* npm run watch"
   },
