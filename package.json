@@ -6,8 +6,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node ./bin/www",
-    "watch": "nodemon ./www",
+    "start": "node ./server.js",
+    "watch": "nodemon ./server.js",
     "devps": "set DEBUG=express-session-authentication:* & npm run watch",
     "devmac": "DEBUG=express-session-authentication:* npm run watch"
   },
