@@ -14,9 +14,10 @@ const create_event = async (req, res, next) => {
   } = req.body;
   // console.log('req.auth._id', req.auth._id);
   // check for required fields
-  if (!event_name || !occurs_at || !description) {
+  if (!event_name || !occurs_at || !category || !plant) {
     return res.status(400).json({
-      error: 'Please enter required fields'});
+      error: 'Please enter required fields',
+    });
   }
 
   try {
@@ -32,7 +33,7 @@ const create_event = async (req, res, next) => {
       plant,
       created_by: req.auth._id,
     });
-    res.status(201).json({newEvent})
+    res.status(201).json({ newEvent });
   } catch (error) {
     console.log(error);
     if (error.code === 11000) {
@@ -51,8 +52,11 @@ const create_event = async (req, res, next) => {
 };
 
 const get_all_events = async (req, res, next) => {
+  console.log(req.headers);
   try {
-    const allEvents = await Event.find({$and:[{ created_by: req.auth._id },{archived:{$eq:false}}]}).populate([
+    const allEvents = await Event.find({
+      $and: [{ created_by: req.auth._id }, { archived: { $eq: false } }],
+    }).populate([
       {
         path: 'created_by', // reference to the User model
         select: 'firstname lastname', // only return the firstname and lastname
@@ -67,7 +71,7 @@ const get_all_events = async (req, res, next) => {
         select: '-created_at -created_at -__v', // exclude these fields
       },
     ]);
-    res.status(200).json({allEvents});
+    res.status(200).json({ allEvents });
   } catch (error) {
     console.log(error);
     if (!allEvents) {
@@ -87,7 +91,7 @@ const get_all_events = async (req, res, next) => {
 
 const get_event_id = async (req, res, next) => {
   const { id } = req.params;
-  console.log(id)
+  console.log(id);
   if (!id) {
     return res.status(400).json({
       error: 'No event id provided',
@@ -114,7 +118,7 @@ const get_event_id = async (req, res, next) => {
         error: 'Unauthorized: You are not authorized to view this event',
       });
     }
-    res.status(200).json({event});
+    res.status(200).json({ event });
   } catch (error) {
     console.log(error);
     if (!event) {
@@ -134,6 +138,8 @@ const get_event_id = async (req, res, next) => {
 
 const update_event_id = async (req, res, next) => {
   const { id } = req.params;
+  console.log(req.params.id);
+  console.log(req.body);
   const {
     event_name,
     description,
@@ -168,7 +174,7 @@ const update_event_id = async (req, res, next) => {
     updatedEvent.plant = plant;
     updatedEvent.updated_at = Date.now();
     await updatedEvent.save();
-    res.status(200).json({updatedEvent});
+    res.status(200).json({ updatedEvent });
   } catch (error) {
     console.log(error);
     if (!updatedEvent) {
@@ -204,7 +210,7 @@ const archive_event_id = async (req, res, next) => {
     archivedEvent.archived = archived;
     archivedEvent.updated_at = Date.now();
     await archivedEvent.save();
-    res.status(200).json({archivedEvent});
+    res.status(200).json({ archivedEvent });
   } catch (error) {
     console.log(error);
     if (!archivedEvent) {
@@ -238,8 +244,7 @@ const delete_event_id = async (req, res, next) => {
     }
     await deletedEvent.remove();
     res.status(200).send(deletedEvent);
-  }
-  catch (error) {
+  } catch (error) {
     console.log(error);
     if (!deletedEvent) {
       return res.status(404).json({

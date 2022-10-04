@@ -31,6 +31,7 @@ const eventSchema = new Schema(
       type: Date,
       trim: true,
       required: false,
+      default: null,
     },
     repeat_frequency: {
       type: Number,
