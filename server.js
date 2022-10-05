@@ -11,6 +11,7 @@ const userRouter = require('./routes/user');
 const categoryRouter = require('./routes/category');
 const plantRouter = require('./routes/plant');
 const eventRouter = require('./routes/event');
+const climateZoneRouter = require('./routes/climate_zone');
 
 const app = express();
 
@@ -41,6 +42,7 @@ app.use('/api', userRouter);
 app.use('/api', categoryRouter);
 app.use('/api', plantRouter);
 app.use('/api', eventRouter);
+app.use('/api', climateZoneRouter);
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
