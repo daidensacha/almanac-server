@@ -9,7 +9,9 @@ const get_climate_zone = async (req, res) => {
   // console.log('latitude', req.query.latitude)
   // console.log('longitude', req.query.longitude)
   // console.log(req.body)
-  const { latitude, longitude } = req.query;
+  const latitude =req.params.latitude;
+  const longitude = req.params.longitude;
+  // const { latitude, longitude } = req.query;
   // console.log('req.query latitude', latitude)
   // console.log('req.query longitude', longitude)
 	const url =
