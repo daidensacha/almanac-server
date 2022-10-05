@@ -34,7 +34,8 @@ const create_plant = async (req, res, next) => {
       notes,
       created_by: req.auth._id,
     });
-    res.status(201).send(newPlant);
+    console.log('newPlant', newPlant);
+    res.status(201).json({newPlant});
   } catch (error) {
     console.log(error);
     if (error.code === 11000) {
@@ -182,6 +183,7 @@ const archive_plant_id_ = async (req, res, next) => {
     archivedPlant.archived = archived;
     archivedPlant.updated_at = Date.now();
     await archivedPlant.save();
+    console.log('archivedPlant', archivedPlant);
     res.status(200).json({archivedPlant});
   } catch (error) {
     console.log(error);
