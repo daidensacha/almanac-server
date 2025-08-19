@@ -12,6 +12,7 @@ const categoryRouter = require('./routes/category');
 const plantRouter = require('./routes/plant');
 const eventRouter = require('./routes/event');
 const climateZoneRouter = require('./routes/climate_zone');
+const unsplashRoutes = require('./routes/unsplash');
 
 const app = express();
 
@@ -43,7 +44,8 @@ app.use('/api', categoryRouter);
 app.use('/api', plantRouter);
 app.use('/api', eventRouter);
 app.use('/api', climateZoneRouter);
+app.use('/api/unsplash', unsplashRoutes);
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
-})
+});

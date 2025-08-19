@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const { expressjwt: expressJwt } = require('express-jwt');
 const _ = require('lodash');
 const { OAuth2Client } = require('google-auth-library');
+const { sendEmailWithNodemailer } = require('../helpers/email');
 
 // const signup = (req, res) => {
 //   // console.log('REQ BODY ON SIGNUP', req.body)
@@ -29,8 +30,6 @@ const { OAuth2Client } = require('google-auth-library');
 //     });
 //   })
 // }
-
-const { sendEmailWithNodemailer } = require('../helpers/email');
 
 // Signup user and send email
 const signup = (req, res) => {
@@ -162,7 +161,7 @@ const signin = (req, res) => {
 // Require signin middleware
 const requireSignin = expressJwt({
   secret: process.env.JWT_SECRET, // returns req.auth._id
-  algorithms: ['HS256']
+  algorithms: ['HS256'],
 });
 
 // Admin middleware to check if user is admin // TODO: add admin role
@@ -183,13 +182,97 @@ const adminMiddleware = (req, res, next) => {
   });
 };
 
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body || {};
+    const user = await User.findOne({ email });
+    if (!user) {
+      // Don’t leak existence; return success message anyway
+      return res.json({
+        message: 'If that email exists, a reset link has been sent.',
+      });
+    }
+
+    const token = jwt.sign({ _id: user._id }, process.env.JWT_RESET_PASSWORD, {
+      expiresIn: '10m',
+    });
+
+    user.resetPasswordLink = token;
+    await user.save();
+
+    const emailData = {
+      from: process.env.EMAIL_FROM,
+      to: email,
+      subject: 'Password reset link',
+      html: `
+        <h1>Reset your password</h1>
+        <p>Click the link below within 10 minutes:</p>
+        <p>${process.env.CLIENT_URL}/reset-password/${token}</p>
+      `,
+    };
+
+    return sendEmailWithNodemailer(req, res, emailData, email);
+  } catch (err) {
+    console.error('FORGOT PASSWORD ERROR', err);
+    return res.status(500).json({ error: 'Could not send reset link' });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  // --- debug logging ---
+  console.log('RESET /reset-password hit');
+  console.log('Headers:', req.headers);
+  console.log('Body:', req.body); // should contain { token, newPassword }
+  // ----------------------
+
+  try {
+    const { token, newPassword } = req.body || {};
+
+    if (!token || !newPassword) {
+      console.log('Missing token or newPassword');
+      return res.status(400).json({ error: 'Missing token or newPassword' });
+    }
+
+    // Quick sanity: should be 3 parts "a.b.c"
+    const parts = String(token).split('.');
+    console.log('Token parts length:', parts.length);
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_RESET_PASSWORD);
+      console.log('JWT verified. Decoded payload:', decoded);
+    } catch (e) {
+      console.log('JWT verify failed:', e.name, e.message);
+      return res.status(401).json({ error: 'Reset link invalid or expired' });
+    }
+
+    console.log('Looking up user by resetPasswordLink…');
+    const user = await User.findOne({ resetPasswordLink: token }).exec();
+    if (!user) {
+      console.log('No user found for this reset token (maybe already used)');
+      return res.status(400).json({ error: 'Reset link no longer valid' });
+    }
+
+    console.log('Updating password for user:', user.email);
+    user.password = newPassword;
+    user.resetPasswordLink = '';
+    await user.save();
+
+    console.log('Password reset OK.');
+    return res.json({ message: 'Password has been reset. Please sign in.' });
+  } catch (err) {
+    console.error('RESET PASSWORD ERROR:', err);
+    return res.status(500).json({ error: 'Server error resetting password' });
+  }
+};
+
+// add to bottom exports:
 module.exports = {
   signup,
   accountActivation,
   signin,
   requireSignin,
   adminMiddleware,
-  // forgotPassword,
-  // resetPassword,
-  // googleLogin,
+  forgotPassword, // <-- ensure these are exported
+  resetPassword, // <--
 };

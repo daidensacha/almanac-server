@@ -6,18 +6,18 @@ const userSignupValidator = [
   check('lastname').not().isEmpty().withMessage('Last name is required'),
   check('email').isEmail().withMessage('Must be a valid email address'),
   check('password')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z]).{8,20}$/)
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,20}$/)
     .withMessage(
-      'Password must be between 8-20 characters. Must contain at least one uppercase letter, one lowercase letter, and one number or special character.',
+      'Password must be between 8-20 characters. Must contain at least one uppercase letter, one lowercase letter, and one number.',
     ),
 ];
 
 const userSigninValidator = [
   check('email').isEmail().withMessage('Must be a valid email address'),
   check('password')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z]).{8,20}$/)
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,20}$/)
     .withMessage(
-      'Password must be between 8-20 characters. Must contain at least one uppercase letter, one lowercase letter, and one number or special character.',
+      'Password must be between 8-20 characters. Must contain at least one uppercase letter, one lowercase letter, and one number.',
     ),
 ];
 
@@ -25,9 +25,9 @@ const userUpdateValidator = [
   check('firstname').not().isEmpty().withMessage('First name is required'),
   check('lastname').not().isEmpty().withMessage('Last name is required'),
   check('password')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z]).{8,20}$/)
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,20}$/)
     .withMessage(
-      'Password must be between 8-20 characters. Must contain at least one uppercase letter, one lowercase letter, and one number or special character.',
+      'Password must be between 8-20 characters. Must contain at least one uppercase letter, one lowercase letter, and one number.',
     ),
 ];
 
@@ -43,9 +43,9 @@ const resetPasswordValidator = [
   check('newPassword')
     .not()
     .isEmpty()
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z]).{8,20}$/)
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,20}$/)
     .withMessage(
-      'Password must be between 8-20 characters. Must contain at least one uppercase letter, one lowercase letter, and one number or special character.',
+      'Password must be between 8-20 characters. Must contain at least one uppercase letter, one lowercase letter, and one number.',
     ),
 ];
 
@@ -55,5 +55,5 @@ module.exports = {
   userSigninValidator,
   userUpdateValidator,
   forgotPasswordValidator,
-  resetPasswordValidator
+  resetPasswordValidator,
 };
