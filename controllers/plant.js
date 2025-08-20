@@ -1,5 +1,6 @@
 const Plant = require('../models/plant');
 const { expressjwt: expressJwt } = require('express-jwt');
+const logger = require('../utils/logger');
 
 const create_plant = async (req, res, next) => {
   const {
@@ -15,7 +16,7 @@ const create_plant = async (req, res, next) => {
     depth,
     notes,
   } = req.body;
-  // console.log('req.auth._id', req.auth._id);
+  logger.debug('req.auth._id', req.auth._id);
   if (!common_name) {
     return res.status(400).send('Please enter a common name');
   }
@@ -34,10 +35,10 @@ const create_plant = async (req, res, next) => {
       notes,
       created_by: req.auth._id,
     });
-    console.log('newPlant', newPlant);
-    res.status(201).json({newPlant});
+    logger.debug('newPlant', newPlant);
+    res.status(201).json({ newPlant });
   } catch (error) {
-    console.log(error);
+    logger.error(error);
     if (error.code === 11000) {
       return res.status(400).json({
         error: 'Plant already exists',
@@ -54,18 +55,20 @@ const create_plant = async (req, res, next) => {
 };
 
 const get_all_plants = async (req, res, next) => {
-  // console.log('req.auth._id', req.auth._id);
+  logger.debug('req.auth._id', req.auth._id);
   try {
     // Only get plants created by the logged in user, & those that are not archived
-    const allPlants = await Plant.find({$and:[{ created_by: req.auth._id },{archived:{$eq:false}}]}).populate([
+    const allPlants = await Plant.find({
+      $and: [{ created_by: req.auth._id }, { archived: { $eq: false } }],
+    }).populate([
       {
         path: 'created_by',
         select: 'firstname lastname', // only return the Persons name
       },
     ]);
-    res.status(200).json({allPlants});
+    res.status(200).json({ allPlants });
   } catch (error) {
-    console.log(error);
+    logger.error(error);
     if (!allPlants) {
       return res.status(404).json({
         error: 'No plants found',
@@ -82,7 +85,7 @@ const get_all_plants = async (req, res, next) => {
 };
 
 const get_plant_id = async (req, res, next) => {
-  // console.log('req.auth._id', req.auth._id);
+  logger.debug('req.auth._id', req.auth._id);
   const { id } = req.params;
   try {
     const plant = await Plant.findById(id).populate([
@@ -98,7 +101,7 @@ const get_plant_id = async (req, res, next) => {
     }
     res.status(200).send(plant);
   } catch (error) {
-    console.log(error);
+    logger.error(error);
     if (!plant) {
       return res.status(404).json({
         error: 'Plant not found',
@@ -129,7 +132,7 @@ const update_plant_id = async (req, res, next) => {
     depth,
     notes,
   } = req.body;
-  console.log('reqBody', req.body);
+  logger.debug('reqBody', req.body);
   try {
     const updatedPlant = await Plant.findById(id);
     if (updatedPlant.created_by != req.auth._id) {
@@ -150,9 +153,9 @@ const update_plant_id = async (req, res, next) => {
     updatedPlant.notes = notes;
     updatedPlant.updated_at = Date.now();
     await updatedPlant.save();
-    res.status(200).json({updatedPlant});
+    res.status(200).json({ updatedPlant });
   } catch (error) {
-    console.log(error);
+    logger.error(error);
     if (!updatedPlant) {
       return res.status(404).json({
         error: 'Plant not found',
@@ -171,8 +174,8 @@ const update_plant_id = async (req, res, next) => {
 const archive_plant_id_ = async (req, res, next) => {
   const { id } = req.params;
   const { archived } = req.body;
-  console.log('archived', archived);
-  console.log('id', id);
+  logger.debug('archived', archived);
+  logger.debug('id', id);
   try {
     const archivedPlant = await Plant.findById(id);
     if (archivedPlant.created_by != req.auth._id) {
@@ -183,10 +186,10 @@ const archive_plant_id_ = async (req, res, next) => {
     archivedPlant.archived = archived;
     archivedPlant.updated_at = Date.now();
     await archivedPlant.save();
-    console.log('archivedPlant', archivedPlant);
-    res.status(200).json({archivedPlant});
+    logger.debug('archivedPlant', archivedPlant);
+    res.status(200).json({ archivedPlant });
   } catch (error) {
-    console.log(error);
+    logger.error(error);
     if (!archivedPlant) {
       return res.status(404).json({
         error: 'Plant not found',
@@ -217,9 +220,9 @@ const delete_plant_id = async (req, res, next) => {
       });
     }
     await plant.remove();
-    res.status(200).json({plant});
+    res.status(200).json({ plant });
   } catch (error) {
-    console.log(error);
+    logger.error(error);
     if (!plant) {
       return res.status(404).json({
         error: 'Plant not found',

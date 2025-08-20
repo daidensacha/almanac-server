@@ -1,4 +1,5 @@
 const Event = require('../models/event');
+const logger = require('../utils/logger');
 
 const create_event = async (req, res, next) => {
   const {
@@ -12,7 +13,7 @@ const create_event = async (req, res, next) => {
     category, // category_id selected from dropdown
     plant, // plant_id selected from dropdown
   } = req.body;
-  // console.log('req.auth._id', req.auth._id);
+  logger.debug('req.auth._id', req.auth._id);
   // check for required fields
   if (!event_name || !occurs_at || !category || !plant) {
     return res.status(400).json({
@@ -35,7 +36,7 @@ const create_event = async (req, res, next) => {
     });
     res.status(201).json({ newEvent });
   } catch (error) {
-    console.log(error);
+    logger.error(error);
     if (error.code === 11000) {
       return res.status(400).json({
         error: 'Event already exists',
@@ -52,7 +53,7 @@ const create_event = async (req, res, next) => {
 };
 
 const get_all_events = async (req, res, next) => {
-  console.log(req.headers);
+  logger.debug(req.headers);
   try {
     const allEvents = await Event.find({
       $and: [{ created_by: req.auth._id }, { archived: { $eq: false } }],
@@ -73,7 +74,7 @@ const get_all_events = async (req, res, next) => {
     ]);
     res.status(200).json({ allEvents });
   } catch (error) {
-    console.log(error);
+    logger.error(error);
     if (!allEvents) {
       return res.status(404).json({
         error: 'No events found',
@@ -91,7 +92,7 @@ const get_all_events = async (req, res, next) => {
 
 const get_event_id = async (req, res, next) => {
   const { id } = req.params;
-  console.log(id);
+  logger.debug(id);
   if (!id) {
     return res.status(400).json({
       error: 'No event id provided',
@@ -120,7 +121,7 @@ const get_event_id = async (req, res, next) => {
     }
     res.status(200).json({ event });
   } catch (error) {
-    console.log(error);
+    logger.error(error);
     if (!event) {
       return res.status(404).json({
         error: 'No event found',
@@ -138,8 +139,8 @@ const get_event_id = async (req, res, next) => {
 
 const update_event_id = async (req, res, next) => {
   const { id } = req.params;
-  console.log(req.params.id);
-  console.log(req.body);
+  logger.debug(req.params.id);
+  logger.debug(req.body);
   const {
     event_name,
     description,
@@ -176,7 +177,7 @@ const update_event_id = async (req, res, next) => {
     await updatedEvent.save();
     res.status(200).json({ updatedEvent });
   } catch (error) {
-    console.log(error);
+    logger.error(error);
     if (!updatedEvent) {
       return res.status(404).json({
         error: 'No event found',
@@ -212,7 +213,7 @@ const archive_event_id = async (req, res, next) => {
     await archivedEvent.save();
     res.status(200).json({ archivedEvent });
   } catch (error) {
-    console.log(error);
+    logger.error(error);
     if (!archivedEvent) {
       return res.status(404).json({
         error: 'No event found',
@@ -245,7 +246,7 @@ const delete_event_id = async (req, res, next) => {
     await deletedEvent.remove();
     res.status(200).send(deletedEvent);
   } catch (error) {
-    console.log(error);
+    logger.error(error);
     if (!deletedEvent) {
       return res.status(404).json({
         error: 'No event found',

@@ -38,10 +38,6 @@ router.put(
   resetPassword,
 );
 
-// Forgot password routes
-// router.put('/forgot-password', forgotPasswordValidator, runValidation, forgotPassword);
-// router.put('/reset-password', resetPasswordValidator, runValidation, resetPassword);
-
 // Google login
 // router.post('/google-login', googleLogin);
 

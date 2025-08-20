@@ -4,6 +4,7 @@ const morgan = require('morgan');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
+const logger = require('./utils/logger');
 
 //  Import routes
 const authRouter = require('./routes/auth');
@@ -19,8 +20,8 @@ const app = express();
 //  DB
 mongoose
   .connect(process.env.DATABASE_URL)
-  .then(() => console.log('DB Connected'))
-  .catch(err => console.log('DB Connection Error: ', err));
+  .then(() => logger.info('DB Connected'))
+  .catch(err => logger.error('DB Connection Error: ', err));
 
 const path = require('path');
 const port = process.env.PORT || 8000;
@@ -47,5 +48,5 @@ app.use('/api', climateZoneRouter);
 app.use('/api/unsplash', unsplashRoutes);
 
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  logger.info(`Server is running on port ${port}`);
 });

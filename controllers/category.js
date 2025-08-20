@@ -1,10 +1,11 @@
 const mongoose = require('mongoose');
 const { expressjwt: expressJwt } = require('express-jwt');
 const Category = require('../models/category');
+const logger = require('../utils/logger');
 
 const create_category = async (req, res, next) => {
   const { category, description } = req.body;
-  console.log('req.auth._id', req.auth._id);
+  logger.debug('req.auth._id', req.auth._id);
   if (!category) {
     return res.status(400).send('No category provided');
   }
@@ -14,9 +15,9 @@ const create_category = async (req, res, next) => {
       description,
       created_by: req.auth._id,
     });
-    res.status(201).json({newCategory});
+    res.status(201).json({ newCategory });
   } catch (error) {
-    console.log(error);
+    logger.error(error);
     if (error.code === 11000) {
       return res.status(400).json({
         error: 'Category already exists',
@@ -35,16 +36,16 @@ const create_category = async (req, res, next) => {
 const get_all_categories = async (req, res, next) => {
   try {
     const allCategories = await Category.find({
-      $and:[{ created_by: req.auth._id },{archived:{$eq:false}}]
+      $and: [{ created_by: req.auth._id }, { archived: { $eq: false } }],
     }).populate([
       {
         path: 'created_by',
         select: 'firstname lastname', // only return the Persons name
       },
     ]);
-    res.status(200).json({allCategories});
+    res.status(200).json({ allCategories });
   } catch (error) {
-    console.log(error);
+    logger.error(error);
     if (!allCategories) {
       return res.status(404).json({
         error: 'No categories found',
@@ -78,9 +79,9 @@ const get_category_id = async (req, res, next) => {
       });
     }
 
-    res.status(200).json({category});
+    res.status(200).json({ category });
   } catch (error) {
-    console.log(error);
+    logger.error(error);
     if (error.name === 'CastError') {
       return res.status(400).json({
         error: 'Invalid ID',
@@ -116,9 +117,9 @@ const update_category_id = async (req, res, next) => {
     updateCategory.description = description;
     updateCategory.updated_at = Date.now();
     await updateCategory.save();
-    res.status(200).json({updateCategory});
+    res.status(200).json({ updateCategory });
   } catch (error) {
-    console.log(error);
+    logger.error(error);
     if (error.name === 'CastError') {
       return res.status(400).json({
         error: 'Invalid ID',
@@ -158,9 +159,9 @@ const archive_category_id = async (req, res, next) => {
     archiveCategory.archived = archived;
     archiveCategory.updated_at = Date.now();
     await archiveCategory.save();
-    res.status(200).json({archiveCategory});
+    res.status(200).json({ archiveCategory });
   } catch (error) {
-    console.log(error);
+    logger.error(error);
     if (error.name === 'CastError') {
       return res.status(400).json({
         error: 'Invalid ID',
@@ -196,9 +197,9 @@ const delete_category_id = async (req, res, next) => {
       });
     }
     await deleteCategory.remove();
-    res.status(200).json({deleteCategory});
+    res.status(200).json({ deleteCategory });
   } catch (error) {
-    console.log(error);
+    logger.error(error);
     if (error.name === 'CastError') {
       return res.status(400).json({
         error: 'Invalid ID',

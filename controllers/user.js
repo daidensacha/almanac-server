@@ -1,7 +1,8 @@
 const User = require('../models/user');
+const logger = require('../utils/logger');
 
 const read = (req, res) => {
-  // console.log('req.user', req.user);
+  logger.debug('req.user', req.user);
   const userId = req.params.id;
   User.findById(userId).exec((err, user) => {
     if (err || !user) {
@@ -16,7 +17,7 @@ const read = (req, res) => {
 };
 
 const updateUser = (req, res) => {
-  // console.log('UPDATE USER - req.auth', req.auth._id, 'UPDATE DATA', req.body);
+  logger.debug('UPDATE USER - req.auth', req.auth._id, 'UPDATE DATA', req.body);
   const {
     firstname,
     lastname,
@@ -66,7 +67,7 @@ const updateUser = (req, res) => {
     }
     user.save((err, updatedUser) => {
       if (err) {
-        console.log('USER UPDATE ERROR', err);
+        logger.error('USER UPDATE ERROR', err);
         return res.status(400).json({
           error: 'User update failed. Try again',
         });

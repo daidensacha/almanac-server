@@ -1,5 +1,6 @@
 const { expressjwt: expressJwt } = require('express-jwt');
 const Category = require('../models/category');
+const logger = require('../utils/logger');
 
 const checkSignin = (req, res, next) => {
   if (req.isAuthenticated()) {
@@ -20,7 +21,7 @@ const checkCategoryExists = async (req, res, next) => {
       select: 'firstname lastname createdAt', // only return the Persons name
     },
   ]);
-  // console.log('Middleware findOne', findOne);
+  logger.debug('Middleware findOne', findOne);
   if (findOne) {
     return res.status(400).json({
       error: 'Category already exist, oops!',

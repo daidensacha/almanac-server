@@ -1,5 +1,5 @@
-// /helpers/email.js
 const nodeMailer = require('nodemailer');
+const logger = require('../utils/logger');
 
 const contactMail = async (firstname, lastname, email, message) => {
   const transporter = await nodeMailer.createTransport({
@@ -30,11 +30,10 @@ const contactMail = async (firstname, lastname, email, message) => {
   };
   try {
     await transporter.sendMail(mailOption);
-    console.log('Message sent');
+    logger.info('Message sent');
     return Promise.resolve('Message sent');
   } catch (error) {
-    console.log(`Problem sending email: ${error}`);
+    logger.error(`Problem sending email: ${error}`);
     return Promise.reject(error);
   }
-
 };

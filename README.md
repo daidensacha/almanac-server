@@ -1,106 +1,162 @@
-
 ![](/images/mockup1.jpg)
-# Garden Almanac Server
 
-## Node Express 4.18.1, Mongoose 6.6.1, with MongoDB
+# Almanac Server
 
-## Client Repo: [Garden Almanac Client](https://github.com/daidensacha/almanac-client)
+## Overview
 
-## Summary
-This is the server for the Garden Almanac app. It is a full stack app that allows users to create a garden and add plants to it. The app will then keep track of the plants and provide information about them. The app will also provide information about the weather and the best time to plant and harvest.
+**Garden Almanac (Server)** — Express + MongoDB API powering auth, plants, categories, events, climate zone lookup, image proxy (Unsplash), and email (nodemailer). Designed to keep keys private and provide simple, cache-friendly endpoints for the client.
 
-## API Documentation
+## Stack
 
-### Plants Collection
-```js
-GET /api/plants
-// Returns a list of plants
+- Node 18+, Express 4
+- MongoDB + Mongoose
+- JWT auth (`express-jwt`)
+- Nodemailer (Gmail App Password)
+- (Planned) Open-Meteo for weather; `rrule` for recurrence; agenda/cron for reminders
 
-GET /api/plant/:id
-// Returns a single plant
+## Quick Start
 
-POST /api/plant/create
-// Creates a new plant
-
-PUT /api/plant/update/:id
-// Updates a plant
-
-PATCH /api/plant/archive/:id
-// Archives a plant
-
-DELETE /api/plant/delete/:id
-// Deletes a plant
+```bash
+npm install
+cp .env.example .env
+npm start
 ```
 
-### Categories Collection
-```js
-GET /api/categories
-// Returns a list of categories
+### Requirements
 
-GET /api/category/:id
-// Returns a single category
+- MongoDB (local or cloud)
+- Node 18+ (LTS)
+- Gmail App Password (or another SMTP provider)
 
-POST /api/category/create
-// Creates a new category
+## Environment
 
-PUT /api/category/update/:id
-// Updates a category
+Create **.env** in the server root (example):
 
-PATCH /api/category/archive/:id
-// Archives a category
+```env
+# App
+PORT=8000
+NODE_ENV=development
 
-DELETE /api/category/delete/:id
-// Deletes a category
+# Client origin (CORS)
+CLIENT_URL=http://localhost:3000
+
+# Database
+DATABASE_URL=mongodb://127.0.0.1:27017/garden_almanac
+
+# JWT
+JWT_SECRET=super_secret_for_auth_tokens
+JWT_ACCOUNT_ACTIVATION=activation_secret_for_signup
+
+# Email (Gmail example - use an App Password)
+EMAIL_FROM=noreply.gardenalmanac@gmail.com
+EMAIL_TO=noreply.gardenalmanac@gmail.com
+GMAIL_PASSWORD=your_gmail_app_password
+
+# Unsplash (server-side only)
+UNSPLASH_ACCESS_KEY=your_unsplash_key
+
+# (Planned) Weather cache TTLs, etc.
 ```
 
-### Events Collection
-```js
-GET /api/events
-// Returns a list of categories
+> Tip: Add a comment **in your own copy** of `.env` to remind yourself to rotate keys; don’t commit secrets.
 
-GET /api/event/:id
-// Returns a single category
+## Scripts
 
-POST /api/event/create
-// Creates a new category
-
-PUT /api/event/update/:id
-// Updates a category
-
-PATCH /api/event/archive/:id
-// Archives a category
-
-DELETE /api/event/delete/:id
-// Deletes a plant
-```
-## Technologies Used
-
-* Node.js
-* Express
-* Mongoose
-* MongoDB
-
-## Usage
-
-* Clone this repo
-* Install dependencies with `npm install`
-* Run the development server with `npm run devpc` for PC, `npm run devmac` for Mac
-
-## ENV Variables required for local development
-
-```js
-NODE_ENV=development_or_production // development or production
-PORT=port_number // default 8000
-CLIENT_URL=client_url_react_app // client url for cors
-DATABASE_URL=mongo_database_url // for production
-EMAIL_TO=email_of_app_gmail_account // for nodemailer
-EMAIL_FROM=email_of_app_gmail_account // (same as above)
-GMAIL_PASSWORD=gmail_password_for_email // gmail app password for nodemailer
-JWT_SECRET=unique_secure_password // used for JWT
-JWT_ACCOUNT_ACTIVATION=unique_secure_password // for account activation
-JWT_RESET_PASSWORD=unique_secure_password // 10 minutes
-GOOGLE_CLIENT_ID=google_api_client_id // for google login
+```bash
+npm start      # runs server.js
 ```
 
-## Author
-Daiden Sacha
+## API (High Level)
+
+Base URL: `/api`
+
+**Auth**
+
+- `POST /signin`
+- `PUT /forgot-password` → sends email with reset token link
+- `PUT /reset-password` → consumes token, sets new password
+- `POST /signup` + `POST /account-activation` (via emailed token)
+
+**User**
+
+- `GET /user/:id` (protected)
+- `PUT /user/update` (protected)
+
+**Domain**
+
+- `GET /categories` (protected)
+- `GET /plants` (protected)
+- `GET /events` (protected)
+- `POST/PUT/DELETE` CRUD variants for each (protected)
+
+**Utilities**
+
+- `GET /climate-zone/:lat/:lon` (protected)
+- `GET /unsplash/photos?query=…` (public or protected; proxied Unsplash)
+- (Planned) `GET /weather?lat&lon` (Open-Meteo proxy + cache)
+
+## Example: Unsplash Proxy
+
+- Client calls: `/api/unsplash/photos?query=raspberries`
+- Server adds header `Authorization: Client-ID <key>`, returns a small JSON:
+  ```json
+  {
+    "url": "https://images.unsplash.com/....jpg",
+    "alt": "raspberries",
+    "query": "raspberries"
+  }
+  ```
+
+## Example: Password Reset Flow
+
+1. **Forgot password**
+
+```bash
+curl -i -X PUT "http://localhost:8000/api/forgot-password" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"you@example.com"}'
+```
+
+2. Click the emailed link → client route `/reset-password/:token`
+3. **Reset**
+
+```bash
+curl -i -X PUT "http://localhost:8000/api/reset-password" \
+  -H "Content-Type: application/json" \
+  -d '{"token":"<PASTE_TOKEN>", "newPassword":"Garden123"}'
+```
+
+## Security & CORS
+
+- CORS allows `CLIENT_URL` in development; otherwise open (adjust as needed).
+- Use Helmet and rate-limits for auth/proxy routes (on the list for Phase 1 hardening).
+
+## Development Workflow
+
+- **Protected branch:** `main` — deployable
+- **Feature/Fix branches:** `feature/<name>`, `fix/<name>`
+- **Conventional commits** preferred.
+
+## Issues & Labels
+
+Same labels as client (`bug`, `enhancement`, `good first issue`, …). Please link issues in PRs and describe testing steps.
+
+## Roadmap (Server)
+
+- [ ] **Axios → node-fetch** or keep axios (already working) + add small in-memory caches (Unsplash, Weather)
+- [ ] `/api/weather?lat&lon` (Open-Meteo proxy) + 10-min cache
+- [ ] RRULE storage on events + server expansion for date ranges
+- [ ] Agenda/cron job for reminders (email channel first)
+- [ ] Add Helmet, rate-limit, input validation on all routes
+- [ ] Indexes on collections: `{ userId: 1 }`, `{ start: 1 }` for events
+
+---
+
+## Contributing (both repos)
+
+1. Comment on an issue (or open one) and get assigned.
+2. Branch from `main` → `feature/<issue-id>-short-name`
+3. Keep PRs small and focused; include a brief demo (gif/screens).
+4. Link related issues; request review.
+
+## License

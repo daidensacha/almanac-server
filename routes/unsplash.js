@@ -1,6 +1,7 @@
 // routes/unsplash.js
 const express = require('express');
 const axios = require('axios');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -33,7 +34,7 @@ router.get('/photos', async (req, res) => {
     });
   } catch (err) {
     const status = err.response?.status || 500;
-    console.error('Unsplash fetch error:', err.message);
+    logger.error('Unsplash fetch error:', err.message);
     if (status === 403 || status === 404 || status === 429) {
       // return a soft-fail payload so the client can fallback
       return res

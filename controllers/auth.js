@@ -4,36 +4,11 @@ const { expressjwt: expressJwt } = require('express-jwt');
 const _ = require('lodash');
 const { OAuth2Client } = require('google-auth-library');
 const { sendEmailWithNodemailer } = require('../helpers/email');
-
-// const signup = (req, res) => {
-//   // console.log('REQ BODY ON SIGNUP', req.body)
-//   const { firstname, lastname, email, password } = req.body;
-
-//   User.findOne({ email }).exec((err, user) => {
-//     if (user) {
-//       return res.status(400).json({
-//         error: 'Email is already in use',
-//       });
-//     }
-//   })
-//   const newUser = new User({ firstname, lastname, email, password });
-
-//   newUser.save((err, success) => {
-//     if (err) {
-//       console.log('SIGNUP ERROR', err);
-//       return res.status(400).json({
-//         error: err,
-//       });
-//     }
-//     res.json({
-//       message: 'Signup success! Please signin.',
-//     });
-//   })
-// }
+const logger = require('../utils/logger');
 
 // Signup user and send email
 const signup = (req, res) => {
-  // console.log('REQ BODY ON SIGNUP', req.body)
+  logger.debug('REQ BODY ON SIGNUP', req.body);
   const { firstname, lastname, email, password } = req.body;
 
   User.findOne({ email }).exec((err, user) => {
@@ -78,7 +53,7 @@ const accountActivation = (req, res) => {
       process.env.JWT_ACCOUNT_ACTIVATION,
       function (err, decoded) {
         if (err) {
-          console.log('JWT VERIFY IN ACCOUNT ACTIVATION ERROR', err);
+          logger.error('JWT VERIFY IN ACCOUNT ACTIVATION ERROR', err);
           return res.status(401).json({
             error: 'Expired link. Signup again',
           });
@@ -90,7 +65,7 @@ const accountActivation = (req, res) => {
 
         user.save((err, user) => {
           if (err) {
-            console.log('SAVE USER IN ACCOUNT ACTIVATION ERROR', err);
+            logger.error('SAVE USER IN ACCOUNT ACTIVATION ERROR', err);
             return res.status(401).json({
               error: 'Error saving user in database. Try signup again',
             });
@@ -213,55 +188,41 @@ const forgotPassword = async (req, res) => {
 
     return sendEmailWithNodemailer(req, res, emailData, email);
   } catch (err) {
-    console.error('FORGOT PASSWORD ERROR', err);
+    logger.error('FORGOT PASSWORD ERROR', err);
     return res.status(500).json({ error: 'Could not send reset link' });
   }
 };
 
 const resetPassword = async (req, res) => {
-  // --- debug logging ---
-  console.log('RESET /reset-password hit');
-  console.log('Headers:', req.headers);
-  console.log('Body:', req.body); // should contain { token, newPassword }
-  // ----------------------
-
   try {
     const { token, newPassword } = req.body || {};
-
     if (!token || !newPassword) {
-      console.log('Missing token or newPassword');
+      logger.warn({ route: 'resetPassword' }, 'Missing token or newPassword');
       return res.status(400).json({ error: 'Missing token or newPassword' });
     }
-
-    // Quick sanity: should be 3 parts "a.b.c"
-    const parts = String(token).split('.');
-    console.log('Token parts length:', parts.length);
 
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_RESET_PASSWORD);
-      console.log('JWT verified. Decoded payload:', decoded);
     } catch (e) {
-      console.log('JWT verify failed:', e.name, e.message);
+      logger.info({ err: e }, 'Invalid or expired reset token');
       return res.status(401).json({ error: 'Reset link invalid or expired' });
     }
 
-    console.log('Looking up user by resetPasswordLink…');
     const user = await User.findOne({ resetPasswordLink: token }).exec();
     if (!user) {
-      console.log('No user found for this reset token (maybe already used)');
+      logger.info({ token }, 'Reset link no longer valid');
       return res.status(400).json({ error: 'Reset link no longer valid' });
     }
 
-    console.log('Updating password for user:', user.email);
     user.password = newPassword;
     user.resetPasswordLink = '';
     await user.save();
 
-    console.log('Password reset OK.');
+    logger.info({ userId: user._id }, 'Password reset success');
     return res.json({ message: 'Password has been reset. Please sign in.' });
   } catch (err) {
-    console.error('RESET PASSWORD ERROR:', err);
+    logger.error({ err }, 'RESET PASSWORD ERROR');
     return res.status(500).json({ error: 'Server error resetting password' });
   }
 };
