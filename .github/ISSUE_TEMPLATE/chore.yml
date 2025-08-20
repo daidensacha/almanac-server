@@ -1,0 +1,21 @@
+name: "Chore"
+description: "For maintenance tasks like dependency updates or refactoring"
+title: "chore: "
+labels: ["chore"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What needs to be updated or maintained?
+    validations:
+      required: true
+  - type: textarea
+    id: checklist
+    attributes:
+      label: Checklist
+      description: Add a checklist of sub-tasks
+      value: |
+        - [ ] Update dependencies
+        - [ ] Test changes locally
+        - [ ] Commit with prefix `chore: `
