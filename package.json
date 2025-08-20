@@ -4,34 +4,34 @@
   "description": "Garden Almanac API (Express + MongoDB)",
   "private": true,
   "main": "server.js",
-  "engines": {
-    "node": ">=18 <23"
-  },
   "scripts": {
-    "start": "node server.js",
-    "watch": "nodemon server.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ./server.js",
+    "watch": "nodemon ./server.js",
     "devps": "set DEBUG=express-session-authentication:* & npm run watch",
-    "devmac": "DEBUG=express-session-authentication:* npm run watch",
-    "test": "echo \"No tests yet\" && exit 0"
+    "devmac": "DEBUG=express-session-authentication:* npm run watch"
   },
+  "engines": {
+    "node": ">=22 <23"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
-    "axios": "^1.11.0",
-    "body-parser": "^1.20.0",
-    "cors": "^2.8.5",
     "@daidensacha/almanac-shared": "github:daidensacha/almanac-shared#main",
-    "dotenv": "^16.0.2",
+    "axios": "^1.11.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
     "express": "^4.18.1",
     "express-jwt": "^7.7.5",
-    "express-validator": "^6.14.2",
-    "google-auth-library": "^8.5.1",
-    "jsonwebtoken": "^8.5.1",
+    "express-validator": "^7.2.1",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^6.6.1",
-    "morgan": "^1.10.0",
-    "nodemailer": "^6.7.8",
+    "nodemailer": "^7.0.5",
     "pino": "^9.9.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.20",
+    "nodemon": "^3.1.10",
     "pino-pretty": "^13.1.1"
   }
 }

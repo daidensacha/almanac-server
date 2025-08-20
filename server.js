@@ -1,6 +1,5 @@
 require('dotenv').config();
 const express = require('express');
-const morgan = require('morgan');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
@@ -14,6 +13,8 @@ const plantRouter = require('./routes/plant');
 const eventRouter = require('./routes/event');
 const climateZoneRouter = require('./routes/climate_zone');
 const unsplashRoutes = require('./routes/unsplash');
+
+mongoose.set('strictQuery', false);
 
 const app = express();
 
@@ -29,7 +30,6 @@ const port = process.env.PORT || 8000;
 app.use(express.json());
 
 //  Middleware
-app.use(morgan('dev'));
 app.use(bodyParser.json({ limit: '2mb' }));
 // app.use(cors()); //  allows all origins
 if (process.env.NODE_ENV === 'development') {
