@@ -1,82 +1,87 @@
+// controllers/user.js
 const User = require('../models/user');
 const logger = require('../utils/logger');
+const {
+  PASSWORD_REGEX,
+  PASSWORD_MESSAGE,
+} = require('@daidensacha/almanac-shared');
 
-const read = (req, res) => {
-  logger.debug('req.user', req.user);
-  const userId = req.params.id;
-  User.findById(userId).exec((err, user) => {
-    if (err || !user) {
-      return res.status(400).json({
-        error: 'User not found',
-      });
-    }
-    user.hashed_password = undefined;
-    user.salt = undefined;
-    res.json(user);
-  });
+const read = async (req, res) => {
+  try {
+    // express-jwt puts the auth id on req.auth; you’re reading by :id param here
+    const user = await User.findById(req.params.id).select(
+      '-hashed_password -salt',
+    );
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    return res.json(user);
+  } catch (err) {
+    logger.error('USER READ ERROR', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
 };
 
-const updateUser = (req, res) => {
-  logger.debug('UPDATE USER - req.auth', req.auth._id, 'UPDATE DATA', req.body);
-  const {
-    firstname,
-    lastname,
-    show_location,
-    latitude,
-    longitude,
-    koppen_geiger_zone,
-    zone_description,
-    password,
-  } = req.body;
-  User.findOne({ _id: req.auth._id }, (err, user) => {
-    if (err || !user) {
-      return res.status(400).json({
-        error: 'User not found',
-      });
+const updateUser = async (req, res) => {
+  try {
+    // Only allow the authenticated user to update themselves (or add an admin check upstream)
+    const user = await User.findById(req.auth._id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const {
+      firstname,
+      lastname,
+      show_location,
+      latitude,
+      longitude,
+      koppen_geiger_zone,
+      zone_description,
+      password,
+    } = req.body || {};
+
+    // Required names
+    if (!firstname)
+      return res.status(422).json({ error: 'First name is required' });
+    if (!lastname)
+      return res.status(422).json({ error: 'Last name is required' });
+
+    // Apply scalar updates
+    user.firstname = firstname;
+    user.lastname = lastname;
+
+    if (typeof show_location === 'boolean') user.show_location = show_location;
+
+    // Coerce lat/lon to numbers or null (so schema Number fields don’t get "")
+    const toNumOrNull = v =>
+      v === undefined || v === null || v === '' ? null : Number(v);
+
+    const latNum = toNumOrNull(latitude);
+    const lonNum = toNumOrNull(longitude);
+    if (latNum !== undefined) user.latitude = latNum;
+    if (lonNum !== undefined) user.longitude = lonNum;
+
+    if (typeof koppen_geiger_zone === 'string')
+      user.koppen_geiger_zone = koppen_geiger_zone;
+    if (typeof zone_description === 'string')
+      user.zone_description = zone_description;
+
+    // Password (optional)
+    if (password) {
+      if (!PASSWORD_REGEX.test(password)) {
+        return res.status(422).json({ error: PASSWORD_MESSAGE });
+      }
+      // trigger virtual setter -> will re-hash
+      user.password = password;
     }
 
-    if (!firstname) {
-      return res.status(400).json({
-        error: 'First name is required',
-      });
-    } else {
-      user.firstname = firstname;
-    }
-    if (!lastname) {
-      return res.status(400).json({
-        error: 'Last name is required',
-      });
-    } else {
-      user.lastname = lastname;
-      user.show_location = show_location;
-      user.latitude = latitude;
-      user.longitude = longitude;
-      user.koppen_geiger_zone = koppen_geiger_zone;
-      user.zone_description = zone_description;
-    }
-    const regularExpression = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z]).{8,20}$/;
-    if (password) {
-      if (!password.match(regularExpression)) {
-        return res.status(400).json({
-          error:
-            'Password must be between 8-20 characters. Must contain at least one uppercase letter, one lowercase letter, and one number or special character.',
-        });
-      } else {
-        user.password = password;
-      }
-    }
-    user.save((err, updatedUser) => {
-      if (err) {
-        logger.error('USER UPDATE ERROR', err);
-        return res.status(400).json({
-          error: 'User update failed. Try again',
-        });
-      }
-      updatedUser.hashed_password = undefined;
-      updatedUser.salt = undefined;
-      res.json(updatedUser);
-    });
-  });
+    const updated = await user.save();
+    const safe = updated.toObject();
+    delete safe.hashed_password;
+    delete safe.salt;
+
+    return res.json(safe);
+  } catch (err) {
+    logger.error('USER UPDATE ERROR', err);
+    return res.status(500).json({ error: 'User update failed. Try again' });
+  }
 };
 
 module.exports = {
