@@ -18,6 +18,7 @@
     "axios": "^1.11.0",
     "body-parser": "^1.20.0",
     "cors": "^2.8.5",
+    "@daidensacha/almanac-shared": "github:daidensacha/almanac-shared#main",
     "dotenv": "^16.0.2",
     "express": "^4.18.1",
     "express-jwt": "^7.7.5",
