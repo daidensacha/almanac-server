@@ -2,7 +2,6 @@ const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 const { expressjwt: expressJwt } = require('express-jwt');
 const _ = require('lodash');
-const { OAuth2Client } = require('google-auth-library');
 const { sendEmailWithNodemailer } = require('../helpers/email');
 const logger = require('../utils/logger');
 
