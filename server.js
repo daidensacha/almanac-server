@@ -26,17 +26,39 @@ mongoose
 
 const path = require('path');
 const port = process.env.PORT || 8000;
+// server/app.js
+const devOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174', // <— add this
+];
+const prodOrigin = process.env.CLIENT_ORIGIN; // e.g. https://timely-sunshine-732f02.netlify.app/
 
 app.use(express.json());
 
 //  Middleware
 app.use(bodyParser.json({ limit: '2mb' }));
-// app.use(cors()); //  allows all origins
-if (process.env.NODE_ENV === 'development') {
-  app.use(cors({ origin: `http://localhost:3000` }));
-} else {
-  app.use(cors());
-}
+
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      // allow curl/Postman/no-origin
+      if (!origin) return cb(null, true);
+
+      if (process.env.NODE_ENV === 'development') {
+        if (devOrigins.includes(origin)) return cb(null, true);
+      } else {
+        if (origin === prodOrigin) return cb(null, true);
+      }
+
+      return cb(new Error(`CORS blocked: ${origin}`));
+    },
+    credentials: true,
+  }),
+);
 
 // Routes middleware
 app.use('/api', authRouter);

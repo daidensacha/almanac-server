@@ -30,8 +30,25 @@ router.put(
   updateUser,
 );
 
+router.patch(
+  '/user/update',
+  requireSignin,
+  userUpdateValidator,
+  runValidation,
+  updateUser,
+);
+
 // Admin can update any user (protected + validated)
 router.put(
+  '/admin/update',
+  requireSignin,
+  adminMiddleware,
+  userUpdateValidator,
+  runValidation,
+  updateUser,
+);
+
+router.patch(
   '/admin/update',
   requireSignin,
   adminMiddleware,
