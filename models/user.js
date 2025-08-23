@@ -54,6 +54,7 @@ const userSchema = new mongoose.Schema(
     salt: String,
     role: {
       type: String,
+      enum: ['subscriber', 'admin'],
       default: 'subscriber',
     },
     resetPasswordLink: {

@@ -141,9 +141,9 @@ const requireSignin = expressJwt({
 const adminMiddleware = async (req, res, next) => {
   try {
     const user = await User.findById(req.auth._id).exec();
-    if (!user) return res.status(400).json({ error: 'User not found' });
+    if (!user) return res.status(404).json({ error: 'User not found' });
     if (user.role !== 'admin') {
-      return res.status(400).json({ error: 'Admin resource. Access denied.' });
+      return res.status(403).json({ error: 'Admin resource. Access denied.' });
     }
     req.profile = user;
     next();
