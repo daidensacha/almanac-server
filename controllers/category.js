@@ -220,6 +220,31 @@ const delete_category_id = async (req, res, next) => {
   next();
 };
 
+const POPULATE_USER = {
+  path: 'created_by',
+  select: 'firstname lastname email _id',
+};
+
+// GET /api/categories?created_by=<ObjectId>&archived=true|false
+const listCategories = async (req, res) => {
+  try {
+    const { created_by, archived } = req.query;
+    const q = {};
+    if (created_by) q.created_by = created_by;
+    if (typeof archived !== 'undefined') q.archived = archived === 'true';
+
+    const docs = await Category.find(q)
+      .populate(POPULATE_USER)
+      .sort({ created_at: -1 })
+      .lean()
+      .exec();
+
+    return res.json({ allCategories: docs });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to load categories' });
+  }
+};
+
 module.exports = {
   create_category,
   get_all_categories,
@@ -227,4 +252,5 @@ module.exports = {
   update_category_id,
   archive_category_id,
   delete_category_id,
+  listCategories,
 };

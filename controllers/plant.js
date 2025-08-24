@@ -171,7 +171,7 @@ const update_plant_id = async (req, res, next) => {
   next();
 };
 
-const archive_plant_id_ = async (req, res, next) => {
+const archive_plant_id = async (req, res, next) => {
   const { id } = req.params;
   const { archived } = req.body;
   logger.debug('archived', archived);
@@ -238,11 +238,37 @@ const delete_plant_id = async (req, res, next) => {
   next();
 };
 
+const POPULATE_USER = {
+  path: 'created_by',
+  select: 'firstname lastname email _id',
+};
+
+// GET /api/plants?created_by=<ObjectId>&archived=true|false
+const listPlants = async (req, res) => {
+  try {
+    const { created_by, archived } = req.query;
+    const q = {};
+    if (created_by) q.created_by = created_by;
+    if (typeof archived !== 'undefined') q.archived = archived === 'true';
+
+    const docs = await Plant.find(q)
+      .populate(POPULATE_USER)
+      .sort({ created_at: -1 })
+      .lean()
+      .exec();
+
+    return res.json({ allPlants: docs });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to load plants' });
+  }
+};
+
 module.exports = {
   create_plant,
   get_all_plants,
   get_plant_id,
   update_plant_id,
-  archive_plant_id_,
+  archive_plant_id,
   delete_plant_id,
+  listPlants,
 };

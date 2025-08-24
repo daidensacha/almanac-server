@@ -33,6 +33,11 @@ router.post('/account-activation', accountActivation);
 // Sign in → returns JWT + user
 router.post('/signin', userSigninValidator, runValidation, signin);
 
+router.post('/signout', (req, res) => {
+  res.clearCookie('token', { sameSite: 'lax', secure: false });
+  return res.json({ ok: true });
+});
+
 // Forgot password → sends reset email
 router.put(
   '/forgot-password',

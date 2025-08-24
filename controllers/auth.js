@@ -25,6 +25,15 @@ const signup = async (req, res) => {
       { expiresIn: '10m' },
     );
 
+    // print activation token in development
+    if (process.env.NODE_ENV !== 'production') {
+      const activationLink = `${process.env.CLIENT_URL}/activate-account/${token}`;
+      logger.info(
+        { activationLink },
+        'DEV: Activation link (copy/paste into browser)',
+      );
+    }
+
     const emailData = {
       from: process.env.EMAIL_FROM,
       to: email,
@@ -98,6 +107,12 @@ const signin = async (req, res) => {
     const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
       expiresIn: '7d',
     });
+    res.cookie('token', token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: false, // set true when serving over HTTPS (i.e. Deployment)
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
     const {
       _id,
@@ -133,8 +148,18 @@ const signin = async (req, res) => {
 
 // Require signin middleware
 const requireSignin = expressJwt({
-  secret: process.env.JWT_SECRET, // returns req.auth._id
+  secret: process.env.JWT_SECRET,
   algorithms: ['HS256'],
+  getToken: req => {
+    const h = req.headers.authorization || '';
+    if (h.startsWith('Bearer ')) return h.slice(7);
+    return (
+      req.cookies?.token ||
+      req.cookies?.access_token ||
+      req.cookies?.jwt ||
+      null
+    );
+  },
 });
 
 // Admin middleware to check if user is admin // TODO: add admin role
