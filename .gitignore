@@ -32,4 +32,6 @@ build/
 .idea/
 *.swp
 
+# curl/cookie files
+cookie.txt
 cookies.txt
