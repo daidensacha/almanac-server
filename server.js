@@ -129,15 +129,15 @@ app.use(
       // Auth routes (non-/auth form)
       { url: /\/api\/signup/i, methods: ['POST'] },
       { url: /\/api\/signin/i, methods: ['POST'] },
-      { url: /\/api\/signout/i, methods: ['POST'] }, // <— add this
-      { url: /\/api\/account-activation/i, methods: ['POST'] }, // <— add this
+      { url: /\/api\/signout/i, methods: ['POST'] },
+      { url: /\/api\/account-activation/i, methods: ['POST'] },
       { url: /\/api\/forgot-password/i, methods: ['PUT'] }, // <— PUT (not POST)
       { url: /\/api\/reset-password/i, methods: ['PUT'] }, // <— PUT (not POST/GET)
 
       // Auth routes (with /auth prefix form)
       { url: /\/api\/auth\/signup/i, methods: ['POST'] },
       { url: /\/api\/auth\/signin/i, methods: ['POST'] },
-      { url: /\/api\/auth\/signout/i, methods: ['POST'] }, // <— add this
+      { url: /\/api\/auth\/signout/i, methods: ['POST'] },
       { url: /\/api\/auth\/account-activation/i, methods: ['POST'] },
       { url: /\/api\/auth\/forgot-password/i, methods: ['PUT'] },
       { url: /\/api\/auth\/reset-password/i, methods: ['PUT'] },

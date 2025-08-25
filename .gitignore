@@ -31,3 +31,5 @@ build/
 .vscode/
 .idea/
 *.swp
+
+cookies.txt
