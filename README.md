@@ -153,6 +153,8 @@ const { PASSWORD_REGEX } = require('@daidensacha/almanac-shared');
 
 ## Development Workflow
 
+See [Branching & Deploy Playbook](docs/branching-deploy-playbook.md) and [CONTRIBUTING](CONTRIBUTING.md).
+
 - Protected branch: **main**
 - Branches: `feature/<name>` or `fix/<name>`
 - Use **conventional commits**
