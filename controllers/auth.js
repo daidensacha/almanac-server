@@ -5,8 +5,68 @@ const _ = require('lodash');
 const { sendEmailWithNodemailer } = require('../helpers/email');
 const logger = require('../utils/logger');
 
+/* -------------------- EXISTING signup / activation / signin stay as-is -------------------- */
+
+// ✅ Require a valid JWT and put its payload on req.auth
+const requireSignin = expressJwt({
+  secret: process.env.JWT_SECRET,
+  algorithms: ['HS256'],
+  getToken: req => {
+    const h = req.headers.authorization || '';
+    if (h.startsWith('Bearer ')) return h.slice(7);
+    return (
+      req.cookies?.token ||
+      req.cookies?.access_token ||
+      req.cookies?.jwt ||
+      null
+    );
+  },
+});
+
+// ✅ Bridge: copy minimal data from req.auth to req.user so controllers can rely on req.user._id
+// (Your signin token only encodes {_id}, so that’s what we attach.)
+const attachUserFromJwt = (req, _res, next) => {
+  if (req.auth && !req.user) {
+    req.user = { _id: req.auth._id }; // extend later if you add more claims
+  }
+  next();
+};
+
+// ✅ Strict admin check: verify role against DB each time (safer for an admin area)
+const adminMiddleware = async (req, res, next) => {
+  try {
+    const id = req.auth?._id || req.user?._id;
+    if (!id) return res.status(401).json({ error: 'Unauthorized' });
+
+    const user = await User.findById(id).select('role').lean();
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin resource. Access denied.' });
+    }
+
+    // Ensure req.user exists and carries role for downstream handlers
+    req.user = req.user || { _id: user._id };
+    req.user.role = user.role;
+
+    next();
+  } catch (err) {
+    return res.status(500).json({ error: 'Server error checking admin' });
+  }
+};
+
+/* -------------------- forgotPassword / resetPassword remain as you have -------------------- */
+
+// module.exports = {
+//   signup,
+//   accountActivation,
+//   signin,
+//   requireSignin,
+//   attachUserFromJwt,  // 👈 export the bridge
+//   adminMiddleware,
+//   forgotPassword,
+//   resetPassword,
+// };
 // Signup user and send email
-// before: callback-based findOne + sendEmailWithNodemailer
 
 const signup = async (req, res) => {
   try {
@@ -146,36 +206,36 @@ const signin = async (req, res) => {
   }
 };
 
-// Require signin middleware
-const requireSignin = expressJwt({
-  secret: process.env.JWT_SECRET,
-  algorithms: ['HS256'],
-  getToken: req => {
-    const h = req.headers.authorization || '';
-    if (h.startsWith('Bearer ')) return h.slice(7);
-    return (
-      req.cookies?.token ||
-      req.cookies?.access_token ||
-      req.cookies?.jwt ||
-      null
-    );
-  },
-});
+// // Require signin middleware
+// const requireSignin = expressJwt({
+//   secret: process.env.JWT_SECRET,
+//   algorithms: ['HS256'],
+//   getToken: req => {
+//     const h = req.headers.authorization || '';
+//     if (h.startsWith('Bearer ')) return h.slice(7);
+//     return (
+//       req.cookies?.token ||
+//       req.cookies?.access_token ||
+//       req.cookies?.jwt ||
+//       null
+//     );
+//   },
+// });
 
-// Admin middleware to check if user is admin // TODO: add admin role
-const adminMiddleware = async (req, res, next) => {
-  try {
-    const user = await User.findById(req.auth._id).exec();
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    if (user.role !== 'admin') {
-      return res.status(403).json({ error: 'Admin resource. Access denied.' });
-    }
-    req.profile = user;
-    next();
-  } catch (err) {
-    return res.status(500).json({ error: 'Server error checking admin' });
-  }
-};
+// // Admin middleware to check if user is admin // TODO: add admin role
+// const adminMiddleware = async (req, res, next) => {
+//   try {
+//     const user = await User.findById(req.auth._id).exec();
+//     if (!user) return res.status(404).json({ error: 'User not found' });
+//     if (user.role !== 'admin') {
+//       return res.status(403).json({ error: 'Admin resource. Access denied.' });
+//     }
+//     req.profile = user;
+//     next();
+//   } catch (err) {
+//     return res.status(500).json({ error: 'Server error checking admin' });
+//   }
+// };
 
 const forgotPassword = async (req, res) => {
   try {
@@ -249,11 +309,12 @@ const resetPassword = async (req, res) => {
 
 // add to bottom exports:
 module.exports = {
-  signup,
-  accountActivation,
-  signin,
-  requireSignin,
-  adminMiddleware,
-  forgotPassword, // <-- ensure these are exported
-  resetPassword, // <--
+  signup, // <--- Working no updates needed
+  accountActivation, // <--- Working no updates needed
+  signin, // <--- Working no updates needed
+  requireSignin, // <-- Rewrite please
+  attachUserFromJwt,
+  adminMiddleware, // <-- Rewrite please
+  forgotPassword, // <--- Working no updates needed
+  resetPassword, // <--- Working no updates needed
 };

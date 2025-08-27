@@ -1,35 +1,74 @@
+// routes/plant.js
 const express = require('express');
 const router = express.Router();
-const { requireSignin, adminMiddleware } = require('../controllers/auth');
-const {
-  create_plant,
-  get_all_plants, // <-- user-scoped
-  get_plant_id,
-  update_plant_id,
-  archive_plant_id,
-  delete_plant_id,
-  listPlants, // <-- admin/global
-} = require('../controllers/plant');
 
-// Create
-router.post('/plant/create', requireSignin, create_plant);
+const { requireSignin, attachUserFromJwt } = require('../controllers/auth');
+const plant = require('../controllers/plant'); // must export: list, getOne, create, update, archive, remove
 
-// USER-SCOPED listing (subscriber & admin see only their own here)
-router.get('/plants', requireSignin, get_all_plants);
+// List current user's (optionally archived) plants
+router.get('/plants', requireSignin, attachUserFromJwt, plant.listPlants);
 
-// ADMIN listing with filters
-router.get('/admin/plants', requireSignin, adminMiddleware, listPlants);
+// Get one plant (scoped to current user)
+router.get('/plant/:id', requireSignin, attachUserFromJwt, plant.getPlant);
 
-// Read one
-router.get('/plant/:id', requireSignin, get_plant_id);
+// Create plant (created_by comes from req.user._id)
+router.post(
+  '/plant/create',
+  requireSignin,
+  attachUserFromJwt,
+  plant.createPlant,
+);
 
-// Update
-router.put('/plant/update/:id', requireSignin, update_plant_id);
+// Update plant (scoped to current user)
+router.put(
+  '/plant/update/:id',
+  requireSignin,
+  attachUserFromJwt,
+  plant.updatePlant,
+);
 
-// Archive
-router.patch('/plant/archive/:id', requireSignin, archive_plant_id);
+// Archive / unarchive
+router.patch(
+  '/plant/archive/:id',
+  requireSignin,
+  attachUserFromJwt,
+  plant.archivePlant,
+);
 
-// Delete
-router.delete('/plant/delete/:id', requireSignin, delete_plant_id);
+// Hard delete (if you keep it)
+router.delete(
+  '/plant/delete/:id',
+  requireSignin,
+  attachUserFromJwt,
+  plant.deletePlant,
+);
+
+// const logger = require('../utils/logger');
+// router.get('/plants', requireSignin, attachUserFromJwt, (req, _res, next) => {
+//   logger.info({ user: req.user?._id }, 'plants route after auth');
+//   next();
+// }, plant.list);
 
 module.exports = router;
+
+// // src/routes/plant.js
+// const express = require('express');
+// const router = express.Router();
+// const {
+//   createPlant,
+//   listPlants,
+//   getPlant,
+//   updatePlant,
+//   archivePlant,
+//   deletePlant,
+// } = require('../controllers/plant');
+
+// // Order matters a little: list first, then id-specific
+// router.get('/plants', listPlants);
+// router.get('/plant/:id', getPlant);
+// router.post('/plant/create', createPlant);
+// router.put('/plant/update/:id', updatePlant);
+// router.patch('/plant/archive/:id', archivePlant);
+// router.delete('/plant/delete/:id', deletePlant);
+
+// module.exports = router;

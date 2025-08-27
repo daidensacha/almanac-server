@@ -1,39 +1,56 @@
 const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+const { Schema } = mongoose;
 
-const categorySchema = new Schema(
+const CategorySchema = new Schema(
   {
-    category: {
+    category_name: {
       type: String,
       trim: true,
       required: true,
-      max: 20,
+      maxlength: 20,
     },
     description: {
       type: String,
       trim: true,
-      required: false,
-      max: 240,
+      maxlength: 240,
+      default: '',
     },
     archived: {
       type: Boolean,
       default: false,
-      trim: true,
-      required: false,
     },
     created_by: {
-      type: Schema.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: 'User',
+      required: true,
+      index: true,
     },
   },
-  {
-    timestamps: {
-      createdAt: 'created_at', // Use `created_at` to store the created date
-      updatedAt: 'updated_at', // and `updated_at` to store the last updated date
-    },
-  },
+  { timestamps: true },
 );
 
-const Category = mongoose.model('Category', categorySchema);
+// JSON shape for backward-compat: also emit `.category`
+function transformDoc(_doc, ret) {
+  // emit legacy alias
+  ret.category = ret.category_name;
+  return ret;
+}
+CategorySchema.set('toJSON', {
+  virtuals: true,
+  versionKey: false,
+  transform: transformDoc,
+});
+CategorySchema.set('toObject', {
+  virtuals: true,
+  versionKey: false,
+  transform: transformDoc,
+});
 
-module.exports = Category;
+// Helpful index: same user cannot have duplicate names case-insensitively
+// (We still guard in controller; collation makes queries simpler)
+CategorySchema.index(
+  { created_by: 1, category_name: 1 },
+  { unique: true, collation: { locale: 'en', strength: 2 } },
+);
+
+module.exports = mongoose.model('Category', CategorySchema);

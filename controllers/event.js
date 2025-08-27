@@ -1,236 +1,168 @@
+// controllers/event.js
 const Event = require('../models/event');
+const { ok, fail } = require('../utils/http');
+const { archiveDoc } = require('../utils/archiveHelper');
 const logger = require('../utils/logger');
 
-const create_event = async (req, res) => {
-  const {
-    event_name,
-    description,
-    occurs_at,
-    occurs_to,
-    repeat_cycle,
-    repeat_frequency,
-    notes,
-    category, // category_id selected from dropdown
-    plant, // plant_id selected from dropdown
-  } = req.body;
+// --- List ---
+// controllers/event.js
+// exports.listEvents = async (req, res) => {
+//   try {
+//     if (!req.user?._id) return fail(res, 401, 'unauthorized');
 
-  if (!event_name || !occurs_at || !category || !plant) {
-    return res.status(400).json({ error: 'Please enter required fields' });
-  }
+//     const { archived } = req.query;
+//     const q = { created_by: req.user._id };
+//     if (archived !== undefined) q.archived = archived === 'true';
 
+//     const docs = await Event.find(q)
+//       .sort({ occurs_at: 1 })
+//       .populate('category', 'category_name')
+//       .populate('plant', 'common_name')
+//       .lean();
+
+//     return ok(res, { events: docs }); // 👈 IMPORTANT
+//   } catch (err) {
+//     return fail(res, 500, 'fetch_failed');
+//   }
+// };
+
+// controllers/event.js
+exports.listEvents = async (req, res) => {
+  const log = logger;
   try {
-    const newEvent = await Event.create({
-      event_name,
-      occurs_at,
-      description,
-      repeat_cycle,
-      repeat_frequency,
-      occurs_to,
-      notes,
-      category,
-      plant,
-      created_by: req.auth._id,
-    });
-    return res.status(201).json({ newEvent });
-  } catch (error) {
-    logger.error(error);
-    if (error.code === 11000)
-      return res.status(400).json({ error: 'Event already exists' });
-    if (error.name === 'ValidationError')
-      return res.status(400).json({ error: error.message });
-    return res.status(500).json({ error: 'Failed to create event' });
-  }
-};
+    // Build query; only filter by created_by if we actually have a user
+    const { archived } = req.query;
+    const q = {};
+    if (req.user?._id) q.created_by = req.user._id;
+    if (archived !== undefined) q.archived = archived === 'true';
 
-// PERSONAL: only this user's non-archived events
-const get_all_events = async (req, res) => {
-  try {
-    const allEvents = await Event.find({
-      created_by: req.auth._id,
-      archived: false,
-    })
-      .populate([
-        { path: 'created_by', select: 'firstname lastname' },
-        { path: 'category', select: 'category description' },
-        { path: 'plant', model: 'Plant', select: '-created_at -__v' },
-      ])
+    const docs = await Event.find(q)
+      .populate('category', 'category_name')
+      .populate('plant', 'common_name')
       .sort({ occurs_at: 1 })
       .lean();
 
-    return res.status(200).json({ allEvents });
-  } catch (error) {
-    logger.error(error);
-    return res.status(500).json({ error: 'Failed to load events' });
+    log.info(
+      { count: docs.length, user: req.user?._id || null },
+      'event:list ok',
+    );
+    return ok(res, { events: docs }); // <-- return docs, not "data"
+  } catch (err) {
+    log.error({ err, msg: err.message }, 'event:list fail');
+    return fail(res, 500, 'fetch_failed');
   }
 };
 
-const get_event_id = async (req, res) => {
-  const { id } = req.params;
-  if (!id) return res.status(400).json({ error: 'No event id provided' });
-
+// --- Get One ---
+// GET /api/event/:id
+exports.getEvent = async (req, res) => {
   try {
-    const event = await Event.findById(id).populate([
-      { path: 'created_by', select: 'firstname lastname' },
-      { path: 'category', select: 'category description' },
-      { path: 'plant', model: 'Plant', select: '-created_at -__v' },
-    ]);
+    if (!req.user?._id) return fail(res, 401, 'unauthorized');
 
-    if (!event) return res.status(404).json({ error: 'No event found' });
-
-    if (String(event.created_by?._id) !== String(req.auth._id)) {
-      return res
-        .status(401)
-        .json({
-          error: 'Unauthorized: You are not authorized to view this event',
-        });
-    }
-
-    return res.status(200).json({ event });
-  } catch (error) {
-    logger.error(error);
-    return res.status(500).json({ error: 'Failed to load event' });
-  }
-};
-
-const update_event_id = async (req, res) => {
-  const { id } = req.params;
-  if (!id) return res.status(400).json({ error: 'No event id provided' });
-
-  const {
-    event_name,
-    description,
-    occurs_at,
-    occurs_to,
-    repeat_cycle,
-    repeat_frequency,
-    notes,
-    category,
-    plant,
-  } = req.body;
-
-  try {
-    let updatedEvent = await Event.findById(id);
-    if (!updatedEvent) return res.status(404).json({ error: 'No event found' });
-
-    if (String(updatedEvent.created_by) !== String(req.auth._id)) {
-      return res
-        .status(401)
-        .json({
-          error: 'Unauthorized: You are not authorized to update this event',
-        });
-    }
-
-    updatedEvent.event_name = event_name;
-    updatedEvent.description = description;
-    updatedEvent.occurs_at = occurs_at;
-    updatedEvent.occurs_to = occurs_to;
-    updatedEvent.repeat_cycle = repeat_cycle;
-    updatedEvent.repeat_frequency = repeat_frequency;
-    updatedEvent.notes = notes;
-    updatedEvent.category = category;
-    updatedEvent.plant = plant;
-    updatedEvent.updated_at = Date.now();
-
-    await updatedEvent.save();
-    return res.status(200).json({ updatedEvent });
-  } catch (error) {
-    logger.error(error);
-    if (error.name === 'ValidationError')
-      return res.status(400).json({ error: error.message });
-    return res.status(500).json({ error: 'Failed to update event' });
-  }
-};
-
-const archive_event_id = async (req, res) => {
-  const { id } = req.params;
-  const { archived } = req.body; // boolean
-
-  if (!id) return res.status(400).json({ error: 'No event id provided' });
-
-  try {
-    let archivedEvent = await Event.findById(id);
-    if (!archivedEvent)
-      return res.status(404).json({ error: 'No event found' });
-
-    if (String(archivedEvent.created_by) !== String(req.auth._id)) {
-      return res
-        .status(401)
-        .json({
-          error: 'Unauthorized: You are not authorized to archive this event',
-        });
-    }
-
-    archivedEvent.archived = Boolean(archived);
-    archivedEvent.updated_at = Date.now();
-    await archivedEvent.save();
-
-    return res.status(200).json({ archivedEvent });
-  } catch (error) {
-    logger.error(error);
-    return res.status(500).json({ error: 'Failed to archive event' });
-  }
-};
-
-const delete_event_id = async (req, res) => {
-  const { id } = req.params;
-  if (!id) return res.status(400).json({ error: 'No event id provided' });
-
-  try {
-    const deletedEvent = await Event.findById(id);
-    if (!deletedEvent) return res.status(404).json({ error: 'No event found' });
-
-    if (String(deletedEvent.created_by) !== String(req.auth._id)) {
-      return res
-        .status(401)
-        .json({
-          error: 'Unauthorized: You are not authorized to delete this event',
-        });
-    }
-
-    await deletedEvent.deleteOne(); // prefer deleteOne over remove()
-    return res.status(200).json({ deletedEvent });
-  } catch (error) {
-    logger.error(error);
-    return res.status(500).json({ error: 'Failed to delete event' });
-  }
-};
-
-const POPULATE_USER = {
-  path: 'created_by',
-  select: 'firstname lastname email _id',
-};
-const POPULATE_CATEGORY = { path: 'category', select: 'category description' };
-const POPULATE_PLANT = {
-  path: 'plant',
-  model: 'Plant',
-  select: '-created_at -__v',
-};
-
-// ADMIN: optional filters ?created_by=&archived=true|false
-const listEvents = async (req, res) => {
-  try {
-    const { created_by, archived } = req.query;
-    const q = {};
-    if (created_by) q.created_by = created_by;
-    if (typeof archived !== 'undefined') q.archived = archived === 'true';
-
-    const allEvents = await Event.find(q)
-      .populate([POPULATE_USER, POPULATE_CATEGORY, POPULATE_PLANT])
-      .sort({ occurs_at: -1 })
+    const doc = await Event.findOne({
+      _id: req.params.id,
+      created_by: req.user._id,
+    })
+      .populate('category', 'category_name')
+      .populate('plant')
       .lean();
 
-    return res.json({ allEvents });
+    if (!doc) return fail(res, 404, 'not_found');
+    return ok(res, doc);
   } catch (err) {
-    return res.status(500).json({ error: 'Failed to load events' });
+    return fail(res, 500, 'fetch_failed');
   }
 };
 
-module.exports = {
-  create_event,
-  get_all_events,
-  get_event_id,
-  update_event_id,
-  archive_event_id,
-  delete_event_id,
-  listEvents,
+// --- Create ---
+exports.createEvent = async (req, res) => {
+  try {
+    const payload = {
+      event_name: (req.body.event_name || '').trim(),
+      description: (req.body.description || '').trim() || undefined,
+      occurs_at: req.body.occurs_at || null,
+      occurs_to: req.body.occurs_to || null,
+      repeat_cycle: req.body.repeat_cycle || '', // ✅ add
+      repeat_frequency:
+        typeof req.body.repeat_frequency === 'number'
+          ? req.body.repeat_frequency
+          : parseInt(req.body.repeat_frequency, 10) || 0, // ✅ add
+      notes: req.body.notes || '',
+      category: req.body.category_id || null,
+      plant: req.body.plant_id || null,
+      created_by: req.user._id,
+    };
+    const doc = await Event.create(payload);
+    return ok(res, doc);
+  } catch (err) {
+    console.error('event:create error', err);
+    return fail(res, 500, 'create_failed');
+  }
+};
+
+// --- Update ---
+
+// --- Update ---
+exports.updateEvent = async (req, res) => {
+  try {
+    const updates = {
+      event_name: req.body.event_name?.trim(),
+      description: req.body.description?.trim(),
+      occurs_at: req.body.occurs_at || null,
+      occurs_to: req.body.occurs_to || null,
+      repeat_cycle: req.body.repeat_cycle || '', // ✅ add
+      repeat_frequency:
+        typeof req.body.repeat_frequency === 'number'
+          ? req.body.repeat_frequency
+          : parseInt(req.body.repeat_frequency, 10) || 0, // ✅ add
+      notes: req.body.notes || '',
+      category: req.body.category_id || null,
+      plant: req.body.plant_id || null,
+    };
+
+    const doc = await Event.findOneAndUpdate(
+      { _id: req.params.id, created_by: req.user._id },
+      { $set: updates },
+      { new: true },
+    ).lean();
+
+    if (!doc) return fail(res, 404, 'not_found');
+    return ok(res, doc);
+  } catch (err) {
+    console.error('event:update error', err);
+    return fail(res, 500, 'update_failed');
+  }
+};
+
+// --- Archive ---
+exports.archiveEvent = async (req, res) => {
+  try {
+    const updated = await archiveDoc({
+      Model: Event,
+      id: req.params.id,
+      userId: req.user._id,
+      archivedFlag: req.body?.archived ?? true,
+      nameField: 'event_name',
+    });
+    if (!updated) return fail(res, 404, 'not_found');
+    return ok(res, updated);
+  } catch (err) {
+    console.error('event:archive error', err);
+    return fail(res, 500, 'archive_failed');
+  }
+};
+
+// --- Delete ---
+exports.deleteEvent = async (req, res) => {
+  try {
+    const out = await Event.deleteOne({
+      _id: req.params.id,
+      created_by: req.user._id,
+    });
+    if (out.deletedCount === 0) return fail(res, 404, 'not_found');
+    return ok(res, { deleted: true });
+  } catch (err) {
+    console.error('event:delete error', err);
+    return fail(res, 500, 'delete_failed');
+  }
 };

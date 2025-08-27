@@ -20,6 +20,9 @@ const unsplashRoutes = require('./routes/unsplash');
 const adminRouter = require('./routes/admin');
 const ipLocateRoutes = require('./routes/ip-locate');
 
+// Middleware
+const { requireSignin, attachUserFromJwt } = require('./controllers/auth');
+
 mongoose.set('strictQuery', false);
 
 const app = express();
@@ -36,39 +39,28 @@ mongoose
 // ───────────────────────────────────────────────
 // Middleware
 // ───────────────────────────────────────────────
-// const devOrigins = [
-//   'http://localhost:3000',
-//   'http://localhost:5173',
-//   'http://localhost:5174',
-//   'http://127.0.0.1:3000',
-//   'http://127.0.0.1:5173',
-//   'http://127.0.0.1:5174',
-// ];
-// const prodOrigin = process.env.CLIENT_ORIGIN;
+const requestId = require('./middleware/requestId');
+app.use(requestId);
 
-// app.use(cookieParser()); // ✅ must be before express-jwt
-// app.use(express.json());
-// app.use(bodyParser.json({ limit: '2mb' }));
+app.use((req, _res, next) => {
+  logger.info(
+    {
+      reqId: req.id,
+      method: req.method,
+      path: req.originalUrl,
+      origin: req.headers.origin,
+      user: req.user?._id || null,
+    },
+    'REQ',
+  );
+  next();
+});
 
-// // 1) PUBLIC first (no auth)
-// // app.use('/api', publicRouter);
+// ------- Cookie parsers ------------------
+app.use(cookieParser()); // fine before auth
+app.use(express.json());
+app.use(bodyParser.json({ limit: '2mb' }));
 
-// app.use(
-//   cors({
-//     origin: (origin, cb) => {
-//       if (!origin) return cb(null, true);
-//       if (process.env.NODE_ENV === 'development') {
-//         if (devOrigins.includes(origin)) return cb(null, true);
-//       } else {
-//         if (origin === prodOrigin) return cb(null, true);
-//       }
-//       return cb(new Error(`CORS blocked: ${origin}`));
-//     },
-//     credentials: true,
-//     allowedHeaders: ['Content-Type', 'Authorization'],
-//     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-//   }),
-// );
 // ---- CORS (defensive, with normalization) ----
 const devOrigins = [
   'http://localhost:3000',
@@ -78,10 +70,6 @@ const devOrigins = [
   'http://127.0.0.1:5173',
   'http://127.0.0.1:5174',
 ];
-
-app.use(cookieParser()); // fine before auth
-app.use(express.json());
-app.use(bodyParser.json({ limit: '2mb' }));
 
 // normalize helper: lower-case, trim, remove trailing slash
 const norm = (u = '') => String(u).trim().toLowerCase().replace(/\/+$/, '');
@@ -127,7 +115,7 @@ const corsOptions = (req, callback) => {
 // Put cors BEFORE your routes
 app.use(cors(corsOptions));
 // Handle preflight with the SAME options (safe; no crash)
-app.options('*', cors(corsOptions));
+// app.options('*', cors(corsOptions)); Never uncomment this, it breaks teh server.
 // This crashes server !!!!!
 // app.options('*', cors());
 
@@ -202,13 +190,18 @@ app.use(
       { url: /\/api\/auth\/reset-password/i, methods: ['PUT'] },
 
       // CORS preflight
-      { url: /.*/, methods: ['OPTIONS'] },
+      // { url: /.*/, methods: ['OPTIONS'] },
 
       // Optional public proxy
       { url: /\/api\/unsplash\/.*/i, methods: ['GET'] },
     ],
   }),
 );
+
+app.use((req, _res, next) => {
+  if (req.auth && !req.user) req.user = req.auth;
+  next();
+});
 
 app.use((err, req, res, next) => {
   if (err.name === 'UnauthorizedError') {
