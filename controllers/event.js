@@ -6,27 +6,6 @@ const logger = require('../utils/logger');
 
 // --- List ---
 // controllers/event.js
-// exports.listEvents = async (req, res) => {
-//   try {
-//     if (!req.user?._id) return fail(res, 401, 'unauthorized');
-
-//     const { archived } = req.query;
-//     const q = { created_by: req.user._id };
-//     if (archived !== undefined) q.archived = archived === 'true';
-
-//     const docs = await Event.find(q)
-//       .sort({ occurs_at: 1 })
-//       .populate('category', 'category_name')
-//       .populate('plant', 'common_name')
-//       .lean();
-
-//     return ok(res, { events: docs }); // 👈 IMPORTANT
-//   } catch (err) {
-//     return fail(res, 500, 'fetch_failed');
-//   }
-// };
-
-// controllers/event.js
 exports.listEvents = async (req, res) => {
   const log = logger;
   try {
@@ -75,6 +54,7 @@ exports.getEvent = async (req, res) => {
 };
 
 // --- Create ---
+// --- Create ---
 exports.createEvent = async (req, res) => {
   try {
     const payload = {
@@ -82,11 +62,12 @@ exports.createEvent = async (req, res) => {
       description: (req.body.description || '').trim() || undefined,
       occurs_at: req.body.occurs_at || null,
       occurs_to: req.body.occurs_to || null,
-      repeat_cycle: req.body.repeat_cycle || '', // ✅ add
+      repeat_cycle: req.body.repeat_cycle || '',
       repeat_frequency:
         typeof req.body.repeat_frequency === 'number'
           ? req.body.repeat_frequency
-          : parseInt(req.body.repeat_frequency, 10) || 0, // ✅ add
+          : parseInt(req.body.repeat_frequency, 10) || 0,
+      repeat_yearly: !!req.body.repeat_yearly, // ✅ add this
       notes: req.body.notes || '',
       category: req.body.category_id || null,
       plant: req.body.plant_id || null,
@@ -101,8 +82,6 @@ exports.createEvent = async (req, res) => {
 };
 
 // --- Update ---
-
-// --- Update ---
 exports.updateEvent = async (req, res) => {
   try {
     const updates = {
@@ -110,11 +89,12 @@ exports.updateEvent = async (req, res) => {
       description: req.body.description?.trim(),
       occurs_at: req.body.occurs_at || null,
       occurs_to: req.body.occurs_to || null,
-      repeat_cycle: req.body.repeat_cycle || '', // ✅ add
+      repeat_cycle: req.body.repeat_cycle || '',
       repeat_frequency:
         typeof req.body.repeat_frequency === 'number'
           ? req.body.repeat_frequency
-          : parseInt(req.body.repeat_frequency, 10) || 0, // ✅ add
+          : parseInt(req.body.repeat_frequency, 10) || 0,
+      repeat_yearly: !!req.body.repeat_yearly, // ✅ add this
       notes: req.body.notes || '',
       category: req.body.category_id || null,
       plant: req.body.plant_id || null,

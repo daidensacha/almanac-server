@@ -44,6 +44,7 @@ const eventSchema = new Schema(
       trim: true,
       required: false,
     },
+    repeat_yearly: { type: Boolean, default: false }, // NEW
     notes: {
       type: String,
       trim: true,
