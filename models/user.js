@@ -36,6 +36,11 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: null,
     },
+    coordsSource: {
+      type: String,
+      enum: ['auto', 'manual', null],
+      default: 'auto',
+    },
     koppen_geiger_zone: {
       type: String,
       trim: true,
@@ -60,6 +65,11 @@ const userSchema = new mongoose.Schema(
     resetPasswordLink: {
       type: String,
       default: '',
+    },
+    locationPreference: {
+      type: String,
+      enum: ['profile', 'ip'],
+      default: 'ip',
     },
   },
   { timestamps: true },

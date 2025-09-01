@@ -18,7 +18,7 @@ const eventRouter = require('./routes/event');
 const climateZoneRouter = require('./routes/climate_zone');
 const unsplashRoutes = require('./routes/unsplash');
 const adminRouter = require('./routes/admin');
-const ipLocateRoutes = require('./routes/ip-locate');
+const ipRouter = require('./routes/getIp');
 
 // Middleware
 const { requireSignin, attachUserFromJwt } = require('./controllers/auth');
@@ -69,6 +69,7 @@ const devOrigins = [
   'http://127.0.0.1:3000',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:5174',
+  'http://192.168.188.20:5173',
 ];
 
 // normalize helper: lower-case, trim, remove trailing slash
@@ -172,6 +173,7 @@ app.use(
       { url: /\/api\/ping/i, methods: ['GET'] },
       { url: /\/api\/health/i, methods: ['GET'] },
       { url: /\/api\/auth\/health/i, methods: ['GET'] },
+      { url: /\/api\/ip/i, methods: ['GET'] },
 
       // Auth routes (non-/auth form)
       { url: /\/api\/signup/i, methods: ['POST'] },
@@ -225,10 +227,10 @@ app.use('/api', eventRouter);
 app.use('/api', climateZoneRouter);
 app.use('/api/unsplash', unsplashRoutes);
 app.use('/api/admin', adminRouter);
-app.use('/api', ipLocateRoutes);
+app.use('/api', ipRouter);
 // ───────────────────────────────────────────────
 // Start
 // ───────────────────────────────────────────────
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   logger.info(`Server is running on port ${port}`);
 });
