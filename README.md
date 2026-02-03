@@ -35,7 +35,27 @@
 
 ## Quick Start
 
-### Server
+## Server
+
+### Option A — Phase (recommended)
+
+This project uses Phase as the single source of truth for environment variables.
+
+```bash
+cd almanac-server
+
+# install dependencies
+npm install
+
+# run (production-like)
+phase run "npm start"
+
+# run with hot reload + DEBUG logs (recommended for development)
+phase run "npm run dev"
+```
+### Option B — dotenv (legacy / fallback)
+
+If you are not using Phase, you can run the server using a local .env file:
 
 ```bash
 cd almanac-server
@@ -44,19 +64,51 @@ cp .env.example .env
 npm start
 ```
 
+Note: Do not commit .env files. .env.example is documentation only.
+
+### Why this is better
+- It clearly labels Phase as primary
+- It keeps dotenv as a fallback without encouraging drift
+- It uses your actual scripts (`start`, `dev`)
+- It removes the incorrect build/preview stuff and the 5173 port mention
+
+---
+
+### 🔧 Small optional improvement: use `npm ci` when possible
+
+Since you have a `package-lock.json`, you *can* tighten installs:
+
+Replace `npm install` with:
+
+```bash
+npm ci
+```
+
+But only if you want stricter reproducibility. If you’re actively changing deps, npm install is fine.
+---
+
 Requirements:
 
 - Node.js 18+
 - MongoDB (local or Atlas cluster)
 - Gmail App Password (or SMTP credentials)
 
-### Client
+## Client
 
+### Use for Phase injection of environment variables
 ```bash
-cd almanac-client
-npm install
-npm start
+phase run "npm run dev"        # dev server on http://localhost:5173
+phase run "npm run build"      # production build
+phase run "npm run preview"    # preview production build locally
 ```
+
+### Use for dotenv model
+```bash
+npm run dev        # dev server on http://localhost:5173
+npm run build      # production build
+npm run preview    # preview production build locally
+```
+
 
 ---
 

@@ -10,8 +10,8 @@ yarn-debug.log*
 yarn-error.log*
 
 # env
-.env
-.env.local
+.env*
+!.env.example
 
 # runtime
 pids
