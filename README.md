@@ -33,131 +33,108 @@
 
 ---
 
-## Quick Start
+## Quick Start — Server
 
-## Server
+Choose **one** configuration model:
 
-### Option A — Phase (recommended)
+- **Option A — dotenv**: local `.env` file (explicit, simple)
+- **Option B — Phase**: inject environment variables at runtime (no `.env` file)
 
-This project uses Phase as the single source of truth for environment variables.
+### Requirements
 
-```bash
-cd almanac-server
+- Node.js 18+
+- MongoDB (local or Atlas)
+- Client running at `http://localhost:5173`
 
-# install dependencies
-npm install
+---
 
-# run (production-like)
-phase run "npm start"
-
-# run with hot reload + DEBUG logs (recommended for development)
-phase run "npm run dev"
-```
-### Option B — dotenv (legacy / fallback)
-
-If you are not using Phase, you can run the server using a local .env file:
+## Option A — dotenv (.env)
 
 ```bash
 cd almanac-server
 npm install
 cp .env.example .env
-npm start
+# Important, edit and replace .env placeholders then continue with next step
+npm run dev
 ```
 
-Note: Do not commit .env files. .env.example is documentation only.
-
-### Why this is better
-- It clearly labels Phase as primary
-- It keeps dotenv as a fallback without encouraging drift
-- It uses your actual scripts (`start`, `dev`)
-- It removes the incorrect build/preview stuff and the 5173 port mention
-
----
-
-### 🔧 Small optional improvement: use `npm ci` when possible
-
-Since you have a `package-lock.json`, you *can* tighten installs:
-
-Replace `npm install` with:
+### Environment Variables
 
 ```bash
-npm ci
-```
-
-But only if you want stricter reproducibility. If you’re actively changing deps, npm install is fine.
----
-
-Requirements:
-
-- Node.js 18+
-- MongoDB (local or Atlas cluster)
-- Gmail App Password (or SMTP credentials)
-
-## Client
-
-### Use for Phase injection of environment variables
-```bash
-phase run "npm run dev"        # dev server on http://localhost:5173
-phase run "npm run build"      # production build
-phase run "npm run preview"    # preview production build locally
-```
-
-### Use for dotenv model
-```bash
-npm run dev        # dev server on http://localhost:5173
-npm run build      # production build
-npm run preview    # preview production build locally
-```
-
-
----
-
-## Environment Variables (Server)
-
-```env
-# App
-PORT=8000
+# .env - *** replace placeholders prior to running "npm run dev" ***
 NODE_ENV=development
-CLIENT_URL=http://localhost:3000
+PORT=8000
+LOG_LEVEL=debug
 
-# Database
-DATABASE_URL=mongodb://127.0.0.1:27017/garden_almanac
+CLIENT_ORIGIN=http://localhost:5173
 
-# JWT
-JWT_SECRET=super_secret_for_auth_tokens
-JWT_ACCOUNT_ACTIVATION=activation_secret_for_signup
+DATABASE_URL=mongodb+srv://<user>:<password>@<cluster>/<db>
 
-# Email
+JWT_SECRET=your_super_secret_key
+JWT_ACCOUNT_ACTIVATION=activation_secret
+JWT_RESET_PASSWORD=reset_secret
+
 EMAIL_FROM=noreply.gardenalmanac@gmail.com
 EMAIL_TO=noreply.gardenalmanac@gmail.com
-GMAIL_PASSWORD=your_gmail_app_password
+GMAIL_PASSWORD=your_app_password
 
-# Unsplash
+GOOGLE_CLIENT_ID=your_google_client_id
+
 UNSPLASH_ACCESS_KEY=your_unsplash_key
+```
+
+> ⚠️ Never commit `.env` files. `.env.example` is documentation only.
+
+---
+
+## Option B — Phase (recommended)
+
+Phase injects environment variables at runtime (**no local `.env` required**).
+
+This README assumes Phase is already installed and configured.  
+For setup and usage details, see: https://docs.phase.dev
+
+Run the server:
+
+```bash
+phase run "npm run dev"
+```
+
+Production-like start:
+
+```bash
+phase run "npm start"
+```
+
+> Environment variable names are identical to `.env.example`.
+
+---
+
+## Scripts
+
+```bash
+npm run dev     # development (nodemon, debug logging)
+npm start       # production-like start
 ```
 
 ---
 
 ## API Overview
 
-Base URL: `/api`
+Base path: `/api`
 
 ### Auth
 
-- `POST /signup` + `POST /account-activation`
+- `POST /signup`
+- `POST /account-activation`
 - `POST /signin`
 - `PUT /forgot-password`
 - `PUT /reset-password`
 
-### User
-
-- `GET /user/:id`
-- `PUT /user/update`
-
 ### Domain
 
-- `GET /categories`
 - `GET /plants`
+- `GET /categories`
 - `GET /events`
 - CRUD variants for each
 
@@ -165,20 +142,6 @@ Base URL: `/api`
 
 - `GET /climate-zone/:lat/:lon`
 - `GET /unsplash/photos?query=…`
-
----
-
-## Example: Password Reset Flow
-
-```bash
-# Request reset
-domain/api/forgot-password { email }
-
-# User clicks emailed link → frontend route `/reset-password/:token`
-
-# Confirm reset
-domain/api/reset-password { token, newPassword }
-```
 
 ---
 
@@ -203,40 +166,28 @@ const { PASSWORD_REGEX } = require('@daidensacha/almanac-shared');
 
 ---
 
-## Development Workflow
+## Upgrade Path (Recommended)
 
-See [Branching & Deploy Playbook](docs/branching-deploy-playbook.md) and [CONTRIBUTING](CONTRIBUTING.md).
+### Node.js
+- Current: Node 18 LTS
+- Next: Node 20 LTS
+- Verify Express & Mongoose compatibility
 
-- Protected branch: **main**
-- Branches: `feature/<name>` or `fix/<name>`
-- Use **conventional commits**
-- PRs should link issues and show testing steps
+### Dependencies
+- Run `npm outdated`
+- Upgrade incrementally (mongoose, nodemailer, jsonwebtoken)
 
----
-
-## Roadmap
-
-- [ ] Weather API proxy (Open-Meteo) + caching
-- [ ] Recurrence rules (RRULE) for events
-- [ ] Agenda/cron reminders (email → push)
-- [ ] Security hardening (Helmet, rate-limit, deeper validation)
-- [ ] Advanced dashboard features (charts, plant insights)
+### Express
+- Express 4 → 5 (when stable)
+- Audit middleware compatibility
 
 ---
 
-## Contributing
+## Development Notes
 
-See [CONTRIBUTING.md](./.github/CONTRIBUTING.md)
-
-- Comment or open an issue before starting
-- Use feature branches from `main`
-- Keep PRs focused & small
-- Add screenshots/gifs when relevant
-
-Quick Links:
-
-- [Open a Bug Report](../../issues/new?template=bug_report.md)
-- [Request a Feature](../../issues/new?template=feature_request.md)
+- Unsplash keys must remain server-side
+- JWTs are used for auth
+- Email flows rely on Gmail App Password or SMTP
 
 ---
 
